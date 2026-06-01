@@ -1,0 +1,14 @@
+# SQL backups
+*.sql
+backups/
+
+# ZIP archives
+*.zip
+
+# Python compiled files
+python/__pycache__/
+*.pyc
+*.pyo
+
+# Environment / sensitive config
+.env

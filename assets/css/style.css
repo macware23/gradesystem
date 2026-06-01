@@ -1,0 +1,570 @@
+/* =====================================================================
+   GradeFlow — Stylesheet
+   Aesthetic: "Academic Ledger" — warm parchment, ink navy, amber accent.
+   Display: Fraunces (serif, characterful). Body/UI: Outfit (clean grotesque).
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400&family=Outfit:wght@300..700&display=swap');
+
+:root {
+  --paper:      #f5f0e6;
+  --paper-2:    #efe8d8;
+  --card:       #fffdf8;
+  --ink:        #1d2433;
+  --ink-soft:   #495066;
+  --line:       #d9cfba;
+  --amber:      #c97b1f;
+  --amber-soft: #f0d9b5;
+  --green:      #2f7d54;
+  --green-soft: #d8ecdf;
+  --red:        #b23b3b;
+  --red-soft:   #f3dcdc;
+  --blue:       #2f5d8f;
+  --blue-soft:  #dbe7f3;
+  --shadow:     0 1px 2px rgba(29,36,51,.06), 0 8px 24px rgba(29,36,51,.08);
+  --radius:     14px;
+  /* ── Gradebook table — complete color system ── */
+  /* Column group headers (criterion name row) */
+  --tbl-header:        var(--ink);
+  --tbl-header-txt:    var(--paper);
+  /* Activity sub-header row */
+  --tbl-sub-header:    color-mix(in srgb, var(--ink) 80%, transparent 20%);
+  --tbl-sub-header-txt:var(--paper);
+  /* AVG / WS column headers */
+  --tbl-avg-header:    var(--amber);
+  --tbl-avg-header-txt:#fff;
+  /* Data row backgrounds */
+  --tbl-row-odd:       #ffffff;
+  --tbl-row-even:      #f7f4ee;
+  --tbl-row-even-computed: #ece4d2;
+  /* Student name column (sticky left) */
+  --tbl-name-bg:       var(--paper-2);
+  --tbl-name-txt:      var(--ink);
+  --tbl-name-even-bg:  var(--tbl-row-even-computed);
+  /* Computed data cells (AVG, WS values) */
+  --tbl-computed-bg:   var(--paper-2);
+  /* Score label text under activity header (/25, /100 etc) and copy icon */
+  --tbl-wt-color:      var(--amber-soft);
+  /* AI Insight cell background (the whole cell, not just the button) */
+  --tbl-ai-cell-bg:    transparent;
+  --tbl-ai-cell-txt:   var(--ink);
+  /* Row text colors */
+  --tbl-row-odd-txt:   var(--ink);
+  --tbl-row-even-txt:  var(--ink);
+  --tbl-raw-txt:       var(--ink);
+  /* AVG / WS data cells */
+  --tbl-avg-bg:        transparent;
+  --tbl-avg-txt:       var(--ink);
+  --tbl-ws-bg:         transparent;
+  --tbl-ws-txt:        var(--ink);
+  /* Equiv cell (=score) */
+  --hl-equiv:          #d8ecdf;
+  --hl-equiv-txt:      #155724;
+  /* Term grade cell — passing */
+  --hl-grade:          var(--amber-soft);
+  --hl-grade-txt:      var(--ink);
+  /* Final Grade header */
+  --hl-final:          var(--amber);
+  --hl-final-txt:      #fff;
+  /* Term grade columns on Final sheet */
+  --hl-term-col:       var(--amber-soft);
+  --hl-term-col-txt:   var(--ink);
+  /* Remarks cells */
+  --hl-remarks-pass:   #d4edda;
+  --hl-remarks-pass-txt:#155724;
+  --hl-remarks-fail:   #f8d7da;
+  --hl-remarks-fail-txt:#721c24;
+  --hl-remarks-inc:    #fff3cd;
+  --hl-remarks-inc-txt:#856404;
+  /* AI Insight button */
+  --hl-ai-btn:         var(--amber);
+  --hl-ai-btn-txt:     #fff;
+  /* Failing grade — overrides everything */
+  --hl-fail-bg:        #f8d7da;
+  --hl-fail-txt:       #721c24;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Outfit', system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 90% -10%, var(--paper-2), transparent 60%),
+    var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+a { color: var(--amber); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--ink);
+  color: var(--paper);
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow);
+}
+.topbar .brand {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem; font-weight: 600;
+  display: flex; align-items: center; gap: 10px;
+}
+.topbar .brand .mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--amber), #e0a44a);
+  display: grid; place-items: center; color: var(--ink);
+  font-weight: 700; font-family: 'Fraunces', serif;
+}
+.topbar nav { display: flex; gap: 22px; align-items: center; }
+.topbar nav a { color: var(--paper-2); font-size: .95rem; }
+.topbar nav a:hover { color: #fff; text-decoration: none; }
+
+/* ---------- Layout ---------- */
+.wrap { max-width: 1280px; margin: 0 auto; padding: 28px; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; }
+.page-head h1 { font-size: 2.1rem; margin: 0; }
+.page-head .sub { color: var(--ink-soft); margin-top: 4px; }
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.card + .card { margin-top: 20px; }
+
+.grid { display: grid; gap: 20px; }
+.grid.cols-3 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: .95rem; font-weight: 500;
+  padding: 10px 18px; border-radius: 10px;
+  border: 1px solid transparent; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform .08s ease, box-shadow .15s ease, background .15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--amber); color: #fff; box-shadow: var(--shadow); }
+.btn-primary:hover { background: #b56d18; text-decoration: none; }
+.btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn-ghost:hover { background: var(--paper-2); text-decoration: none; }
+.btn-dark { background: var(--ink); color: var(--paper); }
+.btn-dark:hover { background: #2a3346; text-decoration: none; }
+.btn-sm { padding: 6px 12px; font-size: .85rem; border-radius: 8px; }
+
+/* ---------- Forms ---------- */
+label { display: block; font-size: .85rem; color: var(--ink-soft); margin-bottom: 6px; font-weight: 500; }
+input, select, textarea {
+  font-family: 'Outfit', sans-serif; font-size: .95rem;
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: #fff; color: var(--ink);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-soft);
+}
+.field { margin-bottom: 16px; }
+.row { display: flex; gap: 14px; flex-wrap: wrap; }
+.row > * { flex: 1; min-width: 140px; }
+
+/* ---------- Auth screens ---------- */
+.auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.auth-card { width: 100%; max-width: 420px; }
+.auth-card .logo { text-align: center; margin-bottom: 8px; }
+.auth-card .logo .big {
+  font-family: 'Fraunces', serif; font-size: 2.4rem; font-weight: 600;
+}
+.auth-card .logo .tag { color: var(--ink-soft); font-size: .95rem; }
+.muted { color: var(--ink-soft); font-size: .9rem; }
+.alert { padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: .9rem; }
+.alert-error { background: var(--red-soft); color: var(--red); }
+.alert-ok    { background: var(--green-soft); color: var(--green); }
+
+/* ---------- Pills / badges ---------- */
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 500; }
+.pill-green { background: var(--green-soft); color: var(--green); }
+.pill-red   { background: var(--red-soft); color: var(--red); }
+.pill-amber { background: var(--amber-soft); color: var(--amber); }
+.pill-blue  { background: var(--blue-soft); color: var(--blue); }
+
+/* ---------- Spreadsheet grid ---------- */
+.sheet-toolbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.sheet-scroll { overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+table.sheet { border-collapse: collapse; width: 100%; font-size: .9rem; }
+table.sheet th, table.sheet td { border: 1px solid var(--line); padding: 0; }
+table.sheet thead th {
+  background: var(--tbl-header); color: var(--tbl-header-txt);
+  font-weight: 500; padding: 10px 12px; text-align: center;
+  position: sticky; top: 0; z-index: 5; white-space: nowrap;
+}
+/* Second header row — activity labels */
+table.sheet thead tr:nth-child(2) th {
+  background: var(--tbl-sub-header); color: var(--tbl-sub-header-txt);
+}
+/* AVG / WS computed column headers */
+table.sheet thead th.computed-h {
+  background: var(--tbl-avg-header) !important; color: var(--tbl-avg-header-txt) !important;
+}
+table.sheet thead th .wt { display: block; font-size: .72rem; color: var(--tbl-wt-color); font-weight: 400; }
+table.sheet thead th .col-paste-btn { color: var(--tbl-wt-color); }
+table.sheet thead th.sticky-col, table.sheet tbody td.sticky-col {
+  position: sticky; left: 0; z-index: 6;
+}
+table.sheet tbody td.sticky-col { background: var(--tbl-name-bg) !important; color: var(--tbl-name-txt); font-weight: 500; }
+table.sheet thead th.sticky-col { z-index: 7; }
+table.sheet tbody td.namecell { padding: 8px 12px; white-space: nowrap; text-align: left; }
+table.sheet tbody td.computed { background: var(--tbl-computed-bg); text-align: center; font-weight: 600; padding: 8px 10px; }
+table.sheet tbody tr:nth-child(odd)  td { background: var(--tbl-row-odd);  color: var(--tbl-row-odd-txt);  }
+table.sheet tbody tr:nth-child(even) td { background: var(--tbl-row-even); color: var(--tbl-row-even-txt); }
+table.sheet tbody tr:nth-child(even) td.sticky-col { background: var(--tbl-name-even-bg) !important; color: var(--tbl-name-txt); }
+table.sheet tbody tr:nth-child(even) td.computed { background: var(--tbl-row-even-computed); }
+.cellinput {
+  border: none; border-radius: 0; text-align: center;
+  padding: 9px 6px; width: 70px; background: transparent;
+  color: var(--ink);   /* explicit text color so 0 is clearly visible */
+}
+.cellinput:focus { box-shadow: inset 0 0 0 2px var(--amber); background: #fff; }
+.cellinput.dirty { background: var(--amber-soft); }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(29,36,51,.5);
+  display: none; place-items: start center; z-index: 100; padding: 20px;
+  overflow-y: auto;
+}
+.modal-backdrop.show { display: grid; }
+.modal { background: var(--card); border-radius: var(--radius); padding: 26px; width: 100%; max-width: 560px; max-height: 88vh; overflow:auto; box-shadow: var(--shadow); pointer-events: all; }
+.modal h2 { margin-top: 0; }
+
+/* ---------- Analysis panel ---------- */
+.analysis { display: grid; gap: 14px; }
+.analysis .risk-banner { padding: 16px 18px; border-radius: var(--radius); display:flex; align-items:center; gap:14px; }
+.risk-high   { background: var(--red-soft); color: var(--red); }
+.risk-medium { background: var(--amber-soft); color: var(--amber); }
+.risk-low    { background: var(--green-soft); color: var(--green); }
+.analysis .risk-banner .score { font-family:'Fraunces',serif; font-size: 2rem; line-height:1; }
+.weak-list { list-style: none; padding: 0; margin: 0; }
+.weak-list li { padding: 10px 12px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; gap:10px; }
+.bar { height: 8px; background: var(--paper-2); border-radius:999px; overflow:hidden; flex:1; align-self:center; max-width:180px; }
+.bar > span { display:block; height:100%; background: var(--amber); }
+.recos { background: var(--blue-soft); border-radius: var(--radius); padding: 16px 18px; }
+.recos h3 { margin:0 0 8px; color: var(--blue); font-size:1.05rem; }
+.recos ul { margin: 0; padding-left: 18px; }
+.recos li { margin-bottom: 6px; }
+
+.empty { text-align:center; padding: 48px 20px; color: var(--ink-soft); }
+.empty .big { font-family:'Fraunces',serif; font-size: 1.4rem; color: var(--ink); margin-bottom:6px; }
+
+.spinner { width:18px;height:18px;border:2px solid var(--amber-soft);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes spin { to { transform: rotate(360deg);} }
+
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color:var(--paper); padding: 12px 18px; border-radius: 10px; box-shadow: var(--shadow); opacity:0; transform: translateY(10px); transition: all .25s; z-index:200;}
+.toast.show { opacity:1; transform: translateY(0); }
+
+.help-note { font-size:.82rem; color: var(--ink-soft); background: var(--paper-2); padding:10px 12px; border-radius:10px; border-left:3px solid var(--amber); }
+
+/* ════════════════════════════════════════════════════════════════════
+   GRADEBOOK TABLE — all cell colors use CSS vars; one rule per class
+   grade-fail-cell MUST be LAST so it always wins over termgrade/term-col
+   ════════════════════════════════════════════════════════════════════ */
+/* AVG/WS column headers */
+table.sheet thead th.computed-h { background: var(--tbl-avg-header) !important; color: var(--tbl-avg-header-txt) !important; }
+/* Raw score cell */
+table.sheet td.rawcell { padding: 0; background: var(--tbl-raw-bg) !important; }
+table.sheet td.rawcell .cellinput { width: 52px; }
+/* Equiv cell */
+table.sheet td.equivcell,
+table.sheet tr:nth-child(even) td.equivcell,
+table.sheet thead th.hl-equiv-cell,
+table.sheet tbody td.hl-equiv-cell {
+  text-align: center; font-weight: 700;
+  background: var(--hl-equiv) !important;
+  color: var(--hl-equiv-txt, var(--green)) !important;
+  padding: 9px 6px; min-width: 38px; font-size: .88rem;
+}
+/* AVG cell */
+table.sheet td.avg-cell,
+table.sheet tr:nth-child(even) td.avg-cell {
+  background: var(--tbl-avg-bg) !important;
+  color: var(--tbl-avg-txt, inherit) !important;
+}
+/* WS cell */
+table.sheet td.ws-cell,
+table.sheet tr:nth-child(even) td.ws-cell {
+  background: var(--tbl-ws-bg) !important;
+  color: var(--tbl-ws-txt, inherit) !important;
+}
+/* Criterion group header colspan divider */
+table.sheet thead th[colspan] { border-bottom: 2px solid var(--tbl-header) !important; }
+/* Term grade cell (passing) — ALL rows same color */
+table.sheet td.termgrade,
+table.sheet tr:nth-child(even) td.termgrade,
+table.sheet thead th.hl-grade-cell,
+table.sheet tbody td.hl-grade-cell {
+  font-size: 1.02rem; font-weight: 700; text-align: center;
+  background: var(--hl-grade) !important;
+  color: var(--hl-grade-txt, var(--ink)) !important;
+}
+/* Final Grade header cell */
+table.sheet thead th.hl-final-cell,
+table.sheet tbody td.hl-final-cell {
+  background: var(--hl-final) !important;
+  color: var(--hl-final-txt, #fff) !important;
+  font-weight: 700; text-align: center;
+}
+/* ── Final sheet — term columns ── */
+table.sheet thead th.hl-term-col-header {
+  background: var(--hl-term-col-header, var(--tbl-header)) !important;
+  color: var(--hl-term-col-header-txt, var(--tbl-header-txt)) !important;
+}
+table.sheet td.term-col-cell,
+table.sheet tr:nth-child(even) td.term-col-cell {
+  background: var(--hl-term-col) !important;
+  color: var(--hl-term-col-txt) !important;
+  text-align: center; font-weight: 700;
+}
+/* ── Final sheet — Remarks ── */
+table.sheet thead th.hl-remarks-header {
+  background: var(--hl-remarks-header, var(--tbl-header)) !important;
+  color: var(--hl-remarks-header-txt, var(--tbl-header-txt)) !important;
+}
+table.sheet td.remarks-pass,
+table.sheet tr:nth-child(even) td.remarks-pass {
+  background: var(--hl-remarks-pass) !important; color: var(--hl-remarks-pass-txt) !important; text-align:center; font-weight:600;
+}
+table.sheet td.remarks-fail,
+table.sheet tr:nth-child(even) td.remarks-fail {
+  background: var(--hl-remarks-fail) !important; color: var(--hl-remarks-fail-txt) !important; text-align:center; font-weight:600;
+}
+table.sheet td.remarks-inc,
+table.sheet tr:nth-child(even) td.remarks-inc {
+  background: var(--hl-remarks-inc) !important; color: var(--hl-remarks-inc-txt) !important; text-align:center; font-weight:600;
+}
+/* ── Final sheet — AI Insight ── */
+table.sheet thead th.hl-ai-header {
+  background: var(--hl-ai-header, var(--tbl-header)) !important;
+  color: var(--hl-ai-header-txt, var(--tbl-header-txt)) !important;
+}
+table.sheet td.ai-cell {
+  text-align: center;
+  background: var(--tbl-ai-cell-bg) !important;
+  color: var(--tbl-ai-cell-txt);
+}
+table.sheet tr:nth-child(even) td.ai-cell { background: var(--tbl-ai-cell-bg) !important; }
+table.sheet td.ai-cell .btn {
+  background: var(--hl-ai-btn) !important;
+  color: var(--hl-ai-btn-txt) !important;
+  border-color: var(--hl-ai-btn) !important;
+}
+/* ── FAILING GRADE — MUST BE LAST to win over all other grade rules ── */
+table.sheet thead th.grade-fail-cell,
+table.sheet tbody td.grade-fail-cell,
+table.sheet tr:nth-child(even) td.grade-fail-cell {
+  background: var(--hl-fail-bg) !important;
+  color: var(--hl-fail-txt) !important;
+  font-weight: 700; text-align: center;
+}
+
+/* ---------- Attendance ---------- */
+.attend-grid { overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+table.attend { border-collapse: collapse; font-size: .88rem; }
+table.attend th { background: var(--ink); color: var(--paper); padding: 9px 10px; white-space: nowrap; border: 1px solid rgba(255,255,255,.1); }
+table.attend td { border: 1px solid var(--line); padding: 0; }
+table.attend td.namecell { padding: 7px 12px; white-space: nowrap; background: var(--paper-2); font-weight: 500; }
+table.attend thead th.sticky-col { position: sticky; left: 0; z-index: 7; }
+table.attend tbody td.sticky-col { position: sticky; left: 0; z-index: 4; }
+.att-btn {
+  width: 100%; min-width: 46px; height: 36px; border: none; cursor: pointer;
+  font-weight: 700; font-size: .88rem; font-family: 'Outfit', sans-serif;
+  transition: background .1s, color .1s;
+}
+.att-P { background: var(--green-soft); color: var(--green); }
+.att-A { background: var(--red-soft); color: var(--red); }
+.att-L { background: var(--amber-soft); color: var(--amber); }
+.att-btn:hover { filter: brightness(.92); }
+.att-summary td { padding: 6px 10px; text-align: center; }
+.att-summary td.namecell { text-align: left; }
+.sess-head { writing-mode: vertical-lr; transform: rotate(180deg); padding: 8px 6px; min-width: 36px; cursor: default; }
+.sess-del { display: block; font-size: .7rem; cursor: pointer; color: var(--red-soft); margin-top: 2px; text-align: center; }
+
+/* ---------- Column-paste popover ---------- */
+.col-paste-btn {
+  display: inline-block; margin-left: 5px; width: 18px; height: 18px;
+  border-radius: 4px; background: rgba(255,255,255,.18); border: none;
+  color: var(--amber-soft); font-size: .78rem; cursor: pointer; line-height: 18px;
+  vertical-align: middle;
+}
+.col-paste-btn:hover { background: var(--amber); color: #fff; }
+.col-paste-pop {
+  position: fixed; z-index: 2000;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.10);
+  padding: 14px 16px; width: 280px;
+}
+.col-paste-pop h4 { margin: 0; font-size: .95rem; }
+.col-paste-pop textarea { height: 150px; font-size: .85rem; resize: vertical; width: 100%; box-sizing: border-box; }
+.col-paste-pop .row { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---------- Draggable class cards ---------- */
+.class-card { cursor: default; transition: transform .15s, box-shadow .15s; }
+.class-card[draggable="true"] { cursor: grab; }
+.class-card[draggable="true"]:active { cursor: grabbing; }
+.class-card.drag-over {
+  outline: 3px dashed var(--amber);
+  outline-offset: 2px;
+  transform: scale(1.01);
+}
+.class-card.dragging {
+  opacity: .45;
+  transform: scale(.97);
+  box-shadow: none;
+}
+.drag-handle {
+  display: inline-flex; align-items: center; gap: 3px;
+  color: var(--ink-soft); font-size: .78rem; cursor: grab;
+  padding: 2px 4px; border-radius: 4px; margin-right: 4px;
+  user-select: none;
+}
+.drag-handle:hover { background: var(--paper-2); color: var(--ink); }
+/* ── Archive / Unarchive buttons — extend .btn .btn-sm ── */
+.btn-archive {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: .85rem; font-weight: 500;
+  padding: 6px 12px; border-radius: 8px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .12s, color .12s, border-color .12s;
+  white-space: nowrap;
+}
+.btn-archive:hover { background: var(--amber-soft); border-color: var(--amber); color: var(--ink); }
+.btn-unarchive {
+  background: transparent;
+  border: 1px solid #b2d8b2;
+  color: #2e7d32;
+  font-size: .85rem; font-weight: 500;
+  padding: 6px 12px; border-radius: 8px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: background .12s, border-color .12s, color .12s;
+  white-space: nowrap;
+}
+.btn-unarchive:hover { background: #e8f5e9; border-color: #4caf50; color: #1b5e20; }
+
+/* ── Archived page class-card grid — same uniform height as dashboard ── */
+#archiveClassGrid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: stretch;
+}
+#archiveClassGrid > .card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+#archiveClassGrid > .card .card-body { flex: 1; min-height: 0; }
+
+/* Equal-height class cards — items fill the grid cell completely */
+#classList {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: stretch;
+  user-select: none;
+}
+#classList > .class-card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;          /* cancel the .card + .card margin-top */
+}
+#classList > .class-card .card-body {
+  flex: 1;            /* pushes buttons to the bottom */
+  min-height: 0;
+}
+/* Admin detail class grid — compact report cards */
+.class-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-items: stretch;
+}
+.class-grid > .class-card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.class-grid > .class-card .card-body { flex: 1; }
+
+/* Admin teacher list — compact square cards */
+#teacherList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.teacher-tile {
+  width: 170px;
+  min-height: 170px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.teacher-tile:hover {
+  border-color: var(--amber);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.teacher-tile.pending {
+  border: 2px solid #ffc107;
+}
+
+/* hl cell classes — consolidated above */
+
+/* Copyright footer — always centered, small */
+.site-footer {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px 0 12px;
+  font-size: .68rem;
+  color: #aaa;
+  margin-top: 20px;
+  letter-spacing: .02em;
+}
+
+/* Analysis scope tab bar */
+#analysisTabBar { background: var(--paper-2); }
+#analysisTabBar .analysis-scope-tab {
+  border-radius: 6px 6px 0 0;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: border-color .15s, background .15s, color .15s;
+}
+#analysisTabBar .analysis-scope-tab:hover {
+  border-bottom-color: var(--amber);
+  background: var(--paper);
+}
