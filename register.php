@@ -74,14 +74,14 @@ $ink    = htmlspecialchars($ss['web_ink']    ?? '#1d2433');
       </button>
     </form>
     <?php else: ?>
-      <a class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" href="login.php">
+      <a class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" href="index.php">
         Go to Login →
       </a>
     <?php endif; ?>
 
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:.85rem">
-      <a href="login.php" class="muted">← Back to login</a>
+      <a href="index.php" class="muted">← Back to login</a>
       <a href="install.php" style="color:var(--amber)">
         &#128274; Create an Admin account instead
       </a>

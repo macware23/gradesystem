@@ -57,7 +57,7 @@ Built with **PHP** (web UI, database, PDF reports via FPDF) + **Python**
    It creates the database and tables and checks your environment. Green checks
    = ready.
 
-6. **Sign in** — Go to `http://localhost/gradesystem/login.php`
+6. **Sign in** — Go to `http://localhost/gradesystem/index.php`
    - Demo account: **demo@gradeflow.local** / **demo1234**
    - Or click *Create an account* to make your own.
 
@@ -96,7 +96,7 @@ Built with **PHP** (web UI, database, PDF reports via FPDF) + **Python**
 ```
 gradesystem/
 ├─ install.php            ← run once to set up
-├─ login.php / register.php / logout.php
+├─ index.php / register.php / logout.php
 ├─ dashboard.php          ← list & create classes
 ├─ gradebook.php          ← the spreadsheet + analysis UI
 ├─ config/

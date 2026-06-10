@@ -41,6 +41,16 @@ function pdfColorField(string $id, string $defaultRgb): string {
 .pdf-font-card:hover { border-color:var(--amber); }
 .pdf-font-card.active { border-color:var(--amber); background:var(--amber-soft); }
 .pdf-font-card .sample { font-size:1.1rem; margin-bottom:3px; }
+/* Header font style toggle buttons */
+.hdr-style-grp { display:inline-flex; gap:3px; }
+.hdr-style-btn {
+  width:28px; height:28px; border:1px solid var(--line); border-radius:5px;
+  background:var(--paper-2); cursor:pointer; font-size:.82rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:background .12s, border-color .12s;
+}
+.hdr-style-btn:hover { border-color:var(--amber); background:var(--amber-soft); }
+.hdr-style-btn.active { background:var(--amber); border-color:var(--amber); color:#fff; font-weight:700; }
 </style>
 </head>
 <body>
@@ -114,6 +124,109 @@ function pdfColorField(string $id, string $defaultRgb): string {
       <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
     </div>
   </div>
+
+  <!-- ─── Report Header Settings (teachers & chairs only) ─── -->
+  <?php if (!is_admin()): ?>
+  <div class="card" style="margin-bottom:20px;border-left:4px solid var(--amber)" id="reportHeaderCard">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
+      <h2 style="margin:0">&#128196; Report Header Settings</h2>
+      <span class="pill pill-amber">&#128100; Your personal settings</span>
+    </div>
+    <p class="muted" style="font-size:.88rem;margin:0 0 18px">
+      Customize the header that appears on all your PDF grade reports.
+      Adjust the font styles for each header line.
+      The report logo is managed by the administrator and applies to all accounts.
+      The schedule of class is set individually on each class (New Class / Edit Class).
+    </p>
+
+    <!-- Header font styles -->
+    <div style="margin-top:20px;margin-bottom:8px;font-size:.88rem;font-weight:600;color:var(--ink)">
+      Header Font Styles
+    </div>
+    <p class="muted" style="font-size:.82rem;margin:0 0 10px">
+      Set the font family, size, and style for each line of the report header.
+    </p>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="background:var(--paper-2)">
+            <th style="padding:7px 10px;text-align:left;border:1px solid var(--line);white-space:nowrap;font-weight:600">Header Line</th>
+            <th style="padding:7px 10px;text-align:left;border:1px solid var(--line);font-weight:600">Font Family</th>
+            <th style="padding:7px 8px;text-align:center;border:1px solid var(--line);font-weight:600">Size (pt)</th>
+            <th style="padding:7px 10px;text-align:center;border:1px solid var(--line);font-weight:600">Style</th>
+          </tr>
+        </thead>
+        <tbody>
+<?php
+$hdrLines = [
+  ['id'=>'hdr_sem',   'label'=>'Semester / S.Y.',  'defFont'=>'Helvetica','defSize'=>'9',   'defStyle'=>''  ],
+  ['id'=>'hdr_lbl',   'label'=>'Grade Label',       'defFont'=>'Times',    'defSize'=>'11',  'defStyle'=>'B' ],
+  ['id'=>'hdr_crs',   'label'=>'Course Name',       'defFont'=>'Helvetica','defSize'=>'9.5', 'defStyle'=>''  ],
+  ['id'=>'hdr_sec',   'label'=>'Section',           'defFont'=>'Helvetica','defSize'=>'9.5', 'defStyle'=>'B' ],
+  ['id'=>'hdr_sch',   'label'=>'Schedule',          'defFont'=>'Helvetica','defSize'=>'9',   'defStyle'=>'B' ],
+];
+foreach ($hdrLines as $hl):
+?>
+          <tr>
+            <td style="padding:6px 10px;border:1px solid var(--line);white-space:nowrap;color:var(--ink-soft)"><?= $hl['label'] ?></td>
+            <td style="padding:5px 8px;border:1px solid var(--line)">
+              <select id="<?= $hl['id'] ?>_font" style="width:130px;font-size:.81rem;padding:4px 6px">
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times">Times New Roman</option>
+                <option value="Courier">Courier</option>
+              </select>
+            </td>
+            <td style="padding:5px 8px;border:1px solid var(--line);text-align:center">
+              <input type="number" id="<?= $hl['id'] ?>_size" value="<?= $hl['defSize'] ?>"
+                min="6" max="24" step="0.5" style="width:58px;text-align:center;font-size:.81rem;padding:4px 6px">
+            </td>
+            <td style="padding:5px 10px;border:1px solid var(--line);text-align:center">
+              <div class="hdr-style-grp" id="<?= $hl['id'] ?>_style_grp">
+                <button type="button" class="hdr-style-btn" data-for="<?= $hl['id'] ?>_style" data-s="B"
+                  onclick="toggleHdrStyle('<?= $hl['id'] ?>_style',this)"><strong>B</strong></button>
+                <button type="button" class="hdr-style-btn" data-for="<?= $hl['id'] ?>_style" data-s="I"
+                  onclick="toggleHdrStyle('<?= $hl['id'] ?>_style',this)"><em>I</em></button>
+                <button type="button" class="hdr-style-btn" data-for="<?= $hl['id'] ?>_style" data-s="U"
+                  onclick="toggleHdrStyle('<?= $hl['id'] ?>_style',this)"><u>U</u></button>
+              </div>
+              <input type="hidden" id="<?= $hl['id'] ?>_style" value="<?= $hl['defStyle'] ?>">
+            </td>
+          </tr>
+<?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Header preview (static) -->
+    <div style="margin-top:18px;margin-bottom:4px;font-size:.82rem;font-weight:600;color:var(--ink-soft)">
+      Header Layout Preview
+    </div>
+    <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;
+                font-family:Arial,sans-serif;max-width:420px;background:#fff">
+      <div style="padding:10px 16px;text-align:center;border-bottom:2px solid #c97b1f">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--line);
+                    display:inline-flex;align-items:center;justify-content:center;
+                    font-size:.7rem;color:var(--ink-soft);margin-bottom:4px">LOGO</div>
+        <div style="font-weight:700;font-size:.9rem">School Name</div>
+        <div style="font-size:.75rem;color:#c97b1f">Department / Address</div>
+      </div>
+      <div style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--line)">
+        <div style="font-size:.75rem;color:#555">2nd Semester, A.Y. 2025-2026</div>
+        <div style="font-weight:700;font-size:.82rem">FINAL CLASS GRADE</div>
+        <div style="font-size:.77rem">Introduction to Computing</div>
+        <div style="font-size:.77rem;font-weight:600">BSIS-1A</div>
+        <div style="font-size:.75rem;font-weight:600" id="previewSchedule">MWF 7:30-8:30, TTH 7:30-9:00</div>
+      </div>
+      <div style="padding:4px 16px;font-size:.7rem;color:#aaa;text-align:center">
+        Instructor &nbsp;·&nbsp; Passed &nbsp;·&nbsp; Failed
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveHeaderSettings()">Save Header Settings</button>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <?php if (is_chair()): ?>
   <!-- ── Chair: My College & Department Assignments (read-only) ── -->
@@ -194,12 +307,15 @@ function pdfColorField(string $id, string $defaultRgb): string {
     </div>
   </div>
 
-  <!-- ---- Logo (GLOBAL - admin only) ---- -->
+  <!-- ---- System Logo (navigation bar - admin only) ---- -->
   <div class="card" style="margin-bottom:20px;border-left:4px solid var(--blue)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-      <h2 style="margin:0">&#127968; School Logo</h2>
+      <h2 style="margin:0">&#127968; System Logo</h2>
       <span class="pill pill-blue">&#127758; Shared by all accounts</span>
     </div>
+    <p class="muted" style="margin-top:0;font-size:.88rem">
+      Appears in the <strong>navigation bar</strong> for all users. This is separate from the PDF report logo.
+    </p>
     <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
       <div id="logoPreview" style="width:120px;height:120px;border:2px dashed var(--line);
            border-radius:12px;display:flex;align-items:center;justify-content:center;
@@ -207,8 +323,8 @@ function pdfColorField(string $id, string $defaultRgb): string {
         <span class="muted" style="font-size:.8rem;text-align:center;padding:8px">No logo yet</span>
       </div>
       <div style="flex:1;min-width:220px">
-        <p class="muted" style="margin-top:0">PNG, JPG, or SVG. Max 2MB.
-          Appears in the navigation bar and in the top-left of all PDF reports next to the school name.</p>
+        <p class="muted" style="margin-top:0;font-size:.85rem">PNG, JPG, or SVG. Max 2MB.
+          Displayed in the top navigation bar across all pages for every account.</p>
         <input type="file" id="logoInput" accept="image/*" style="margin-bottom:12px">
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary" onclick="uploadLogo()">Upload Logo</button>
@@ -216,6 +332,130 @@ function pdfColorField(string $id, string $defaultRgb): string {
         </div>
         <div id="logoMsg" style="margin-top:8px"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ---- Report Header Settings (admin only — global, applies to all PDF reports) ---- -->
+  <div class="card" style="margin-bottom:20px;border-left:4px solid var(--blue)" id="adminReportHeaderCard">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
+      <h2 style="margin:0">&#128196; Report Header Settings</h2>
+      <span class="pill pill-blue">&#127758; Shared by all accounts</span>
+    </div>
+    <p class="muted" style="font-size:.88rem;margin:0 0 18px">
+      The report logo and header font styles set here are <strong>universally applied</strong> to all
+      PDF grade reports across every faculty and program chair account.
+    </p>
+
+    <!-- Report Logo (PDF reports only — separate from system/nav logo) -->
+    <div style="margin-bottom:24px">
+      <label style="font-weight:600;display:block;margin-bottom:8px">
+        Report Logo
+        <span class="muted" style="font-weight:400;font-size:.82rem;margin-left:6px">— appears at the top of every PDF grade report</span>
+      </label>
+      <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
+        <div id="reportLogoPreview" style="width:120px;height:120px;border:2px dashed var(--line);
+             border-radius:12px;display:flex;align-items:center;justify-content:center;
+             background:var(--paper-2);overflow:hidden;flex-shrink:0">
+          <span class="muted" style="font-size:.8rem;text-align:center;padding:8px">No report logo</span>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <p class="muted" style="margin-top:0;font-size:.85rem">PNG, JPG, or SVG. Max 2MB.
+            Used only in PDF report headers. If none is set, the system logo is used as fallback.</p>
+          <input type="file" id="reportLogoInput" accept="image/*" style="margin-bottom:12px">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="uploadReportLogo()">Upload Report Logo</button>
+            <button class="btn btn-ghost"   onclick="deleteReportLogo()">Remove</button>
+          </div>
+          <div id="reportLogoMsg" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Font Styles (global defaults for all accounts) -->
+    <div style="margin-bottom:8px;font-size:.88rem;font-weight:600;color:var(--ink)">
+      Header Font Styles
+    </div>
+    <p class="muted" style="font-size:.82rem;margin:0 0 10px">
+      Set the font family, size, and style for each line of the report header. These defaults apply to all accounts.
+    </p>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="background:var(--paper-2)">
+            <th style="padding:7px 10px;text-align:left;border:1px solid var(--line);white-space:nowrap;font-weight:600">Header Line</th>
+            <th style="padding:7px 10px;text-align:left;border:1px solid var(--line);font-weight:600">Font Family</th>
+            <th style="padding:7px 8px;text-align:center;border:1px solid var(--line);font-weight:600">Size (pt)</th>
+            <th style="padding:7px 10px;text-align:center;border:1px solid var(--line);font-weight:600">Style</th>
+          </tr>
+        </thead>
+        <tbody>
+<?php
+$hdrLines = [
+  ['id'=>'hdr_sem', 'label'=>'Semester / S.Y.',  'defFont'=>'Helvetica','defSize'=>'9',   'defStyle'=>''  ],
+  ['id'=>'hdr_lbl', 'label'=>'Grade Label',       'defFont'=>'Times',    'defSize'=>'11',  'defStyle'=>'B' ],
+  ['id'=>'hdr_crs', 'label'=>'Course Name',       'defFont'=>'Helvetica','defSize'=>'9.5', 'defStyle'=>''  ],
+  ['id'=>'hdr_sec', 'label'=>'Section',           'defFont'=>'Helvetica','defSize'=>'9.5', 'defStyle'=>'B' ],
+  ['id'=>'hdr_sch', 'label'=>'Schedule',          'defFont'=>'Helvetica','defSize'=>'9',   'defStyle'=>'B' ],
+];
+foreach ($hdrLines as $hl):
+?>
+          <tr>
+            <td style="padding:6px 10px;border:1px solid var(--line);white-space:nowrap;color:var(--ink-soft)"><?= $hl['label'] ?></td>
+            <td style="padding:5px 8px;border:1px solid var(--line)">
+              <select id="<?= $hl['id'] ?>_font" style="width:130px;font-size:.81rem;padding:4px 6px">
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times">Times New Roman</option>
+                <option value="Courier">Courier</option>
+              </select>
+            </td>
+            <td style="padding:5px 8px;border:1px solid var(--line);text-align:center">
+              <input type="number" id="<?= $hl['id'] ?>_size" value="<?= $hl['defSize'] ?>"
+                min="6" max="24" step="0.5" style="width:58px;text-align:center;font-size:.81rem;padding:4px 6px">
+            </td>
+            <td style="padding:5px 10px;border:1px solid var(--line);text-align:center">
+              <div class="hdr-style-grp" id="<?= $hl['id'] ?>_style_grp">
+                <button type="button" class="hdr-style-btn" data-for="<?= $hl['id'] ?>_style" data-s="B"
+                  onclick="toggleHdrStyle('<?= $hl['id'] ?>_style',this)"><strong>B</strong></button>
+                <button type="button" class="hdr-style-btn" data-for="<?= $hl['id'] ?>_style" data-s="I"
+                  onclick="toggleHdrStyle('<?= $hl['id'] ?>_style',this)"><em>I</em></button>
+                <button type="button" class="hdr-style-btn" data-for="<?= $hl['id'] ?>_style" data-s="U"
+                  onclick="toggleHdrStyle('<?= $hl['id'] ?>_style',this)"><u>U</u></button>
+              </div>
+              <input type="hidden" id="<?= $hl['id'] ?>_style" value="<?= $hl['defStyle'] ?>">
+            </td>
+          </tr>
+<?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Header Layout Preview -->
+    <div style="margin-top:18px;margin-bottom:4px;font-size:.82rem;font-weight:600;color:var(--ink-soft)">
+      Header Layout Preview
+    </div>
+    <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;
+                font-family:Arial,sans-serif;max-width:420px;background:#fff">
+      <div style="padding:10px 16px;text-align:center;border-bottom:2px solid #c97b1f">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--line);
+                    display:inline-flex;align-items:center;justify-content:center;
+                    font-size:.7rem;color:var(--ink-soft);margin-bottom:4px">LOGO</div>
+        <div style="font-weight:700;font-size:.9rem">School Name</div>
+        <div style="font-size:.75rem;color:#c97b1f">Department / Address</div>
+      </div>
+      <div style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--line)">
+        <div style="font-size:.75rem;color:#555">2nd Semester, A.Y. 2025-2026</div>
+        <div style="font-weight:700;font-size:.82rem">FINAL CLASS GRADE</div>
+        <div style="font-size:.77rem">Introduction to Computing</div>
+        <div style="font-size:.77rem;font-weight:600">BSIS-1A</div>
+        <div style="font-size:.75rem;font-weight:600">MWF 7:30-8:30, TTH 7:30-9:00</div>
+      </div>
+      <div style="padding:4px 16px;font-size:.7rem;color:#aaa;text-align:center">
+        Instructor &nbsp;·&nbsp; Passed &nbsp;·&nbsp; Failed
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveAdminHeaderSettings()">Save Header Settings</button>
     </div>
   </div>
   <?php endif; ?>
@@ -2437,11 +2677,26 @@ async function loadSettings() {
   selectWebFont(wf.key, wf.css, wf.google || '');
   selectPdfTitleFont(s.pdf_title_font || 'Times');
   selectPdfBodyFont(s.pdf_body_font   || 'Helvetica');
-  // Logo
+  // System logo (nav bar)
   if (s.logo_path) {
-    document.getElementById('logoPreview').innerHTML =
+    const lp = document.getElementById('logoPreview');
+    if (lp) lp.innerHTML =
       `<img src="${esc(s.logo_path)}?t=${Date.now()}" style="max-width:116px;max-height:116px;object-fit:contain">`;
   }
+  // Report logo (PDF reports)
+  if (s.report_logo_path) {
+    const rl = document.getElementById('reportLogoPreview');
+    if (rl) rl.innerHTML =
+      `<img src="${esc(s.report_logo_path)}?t=${Date.now()}" style="max-width:116px;max-height:116px;object-fit:contain">`;
+  }
+  // Teacher personal logo & schedule
+  if (document.getElementById('teacherLogoPreview')) {
+    if (s.pdf_teacher_logo_path) {
+      document.getElementById('teacherLogoPreview').innerHTML =
+        `<img src="${esc(s.pdf_teacher_logo_path)}?t=${Date.now()}" style="max-width:116px;max-height:116px;object-fit:contain">`;
+    }
+  }
+  if (typeof loadHdrFonts === 'function') loadHdrFonts(s);
   <?php if (is_admin()): ?>loadAdmins();<?php endif; ?>
 }
 
@@ -2524,6 +2779,7 @@ async function saveSettings() {
     pdf_term_paper:  document.getElementById('p_term_paper').value,
     pdf_final_paper: document.getElementById('p_final_paper').value,
     pdf_font_size:  document.getElementById('p_fsize_num').value,
+    ...(typeof collectHdrFonts === 'function' ? collectHdrFonts() : {}),
   };
   const r = await fetch('api/settings.php?action=save',{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
@@ -2576,7 +2832,150 @@ async function deleteLogo() {
   });
 }
 
+// ---- Teacher personal logo ----
+async function uploadTeacherLogo() {
+  const file = document.getElementById('teacherLogoInput').files[0];
+  if (!file) { toast('Please select an image file first'); return; }
+  const fd = new FormData(); fd.append('logo', file);
+  const r = await fetch('api/settings.php?action=upload_teacher_logo',{method:'POST',body:fd}).then(r=>r.json());
+  if (r.ok) {
+    document.getElementById('teacherLogoPreview').innerHTML =
+      `<img src="${esc(r.logo_path)}?t=${Date.now()}" style="max-width:116px;max-height:116px;object-fit:contain">`;
+    document.getElementById('teacherLogoMsg').innerHTML = '<span style="color:var(--green)">&#10003; Logo uploaded</span>';
+    toast('Custom logo uploaded');
+  } else { toast(r.error||'Upload failed'); }
+}
+async function deleteTeacherLogo() {
+  showConfirm({
+    title: 'Remove Custom Logo',
+    message: 'Remove your custom report logo?\nYour PDFs will use the school logo instead.',
+    confirmText: 'Remove Logo', danger: true,
+    onConfirm: async () => {
+  await fetch('api/settings.php?action=delete_teacher_logo',{method:'POST'});
+  document.getElementById('teacherLogoPreview').innerHTML =
+    '<span class="muted" style="font-size:.8rem;text-align:center;padding:8px">No custom logo</span>';
+  document.getElementById('teacherLogoMsg').innerHTML = '';
+  toast('Custom logo removed');
+    }
+  });
+}
+
+// ── Header font style toggle buttons ──────────────────────────────
+function toggleHdrStyle(hiddenId, btn) {
+  const el = document.getElementById(hiddenId);
+  if (!el) return;
+  const s = btn.dataset.s;
+  let cur = el.value;
+  if (cur.includes(s)) {
+    cur = cur.replace(s, '');
+    btn.classList.remove('active');
+  } else {
+    cur = cur + s;
+    btn.classList.add('active');
+  }
+  el.value = cur;
+}
+
+// Apply a saved style string to a group (marks buttons active/inactive)
+function applyHdrStyle(baseId, styleStr) {
+  const el = document.getElementById(baseId + '_style');
+  if (!el) return;
+  el.value = styleStr || '';
+  const grp = document.getElementById(baseId + '_style_grp');
+  if (!grp) return;
+  grp.querySelectorAll('.hdr-style-btn').forEach(btn => {
+    btn.classList.toggle('active', (styleStr || '').includes(btn.dataset.s));
+  });
+}
+
+const HDR_FONT_IDS = ['hdr_sem','hdr_lbl','hdr_crs','hdr_sec','hdr_sch'];
+const HDR_SAVE_KEYS = {
+  hdr_sem: ['pdf_hdr_sem_font','pdf_hdr_sem_size','pdf_hdr_sem_style'],
+  hdr_lbl: ['pdf_hdr_lbl_font','pdf_hdr_lbl_size','pdf_hdr_lbl_style'],
+  hdr_crs: ['pdf_hdr_crs_font','pdf_hdr_crs_size','pdf_hdr_crs_style'],
+  hdr_sec: ['pdf_hdr_sec_font','pdf_hdr_sec_size','pdf_hdr_sec_style'],
+  hdr_sch: ['pdf_hdr_sch_font','pdf_hdr_sch_size','pdf_hdr_sch_style'],
+};
+
+function loadHdrFonts(s) {
+  // Apply saved (or default) font settings to each row
+  const defs = {
+    hdr_sem: ['Helvetica','9',''],
+    hdr_lbl: ['Times','11','B'],
+    hdr_crs: ['Helvetica','9.5',''],
+    hdr_sec: ['Helvetica','9.5','B'],
+    hdr_sch: ['Helvetica','9','B'],
+  };
+  HDR_FONT_IDS.forEach(id => {
+    const [fk, sk, stk] = HDR_SAVE_KEYS[id];
+    const [df, ds, dst] = defs[id];
+    const fontEl = document.getElementById(id + '_font');
+    const sizeEl = document.getElementById(id + '_size');
+    if (fontEl) fontEl.value = s[fk] || df;
+    if (sizeEl) sizeEl.value = s[sk] || ds;
+    applyHdrStyle(id, s[stk] !== undefined ? s[stk] : dst);
+  });
+}
+
+function collectHdrFonts() {
+  const out = {};
+  HDR_FONT_IDS.forEach(id => {
+    const [fk, sk, stk] = HDR_SAVE_KEYS[id];
+    const fontEl = document.getElementById(id + '_font');
+    const sizeEl = document.getElementById(id + '_size');
+    const styleEl = document.getElementById(id + '_style');
+    if (fontEl)  out[fk]  = fontEl.value;
+    if (sizeEl)  out[sk]  = sizeEl.value;
+    if (styleEl) out[stk] = styleEl.value;
+  });
+  return out;
+}
+
+// ---- Save report header settings only ----
+async function saveHeaderSettings() {
+  const payload = {
+    ...(typeof collectHdrFonts === 'function' ? collectHdrFonts() : {}),
+  };
+  const r = await fetch('api/settings.php?action=save',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+  }).then(r=>r.json());
+  toast(r.ok ? 'Header settings saved' : (r.error || 'Error saving'));
+}
+
 <?php if (is_admin()): ?>
+async function uploadReportLogo() {
+  const file = document.getElementById('reportLogoInput').files[0];
+  if (!file) { toast('Please select an image file first'); return; }
+  const fd = new FormData(); fd.append('logo', file);
+  const r = await fetch('api/settings.php?action=upload_report_logo',{method:'POST',body:fd}).then(r=>r.json());
+  if (r.ok) {
+    document.getElementById('reportLogoPreview').innerHTML =
+      `<img src="${esc(r.logo_path)}?t=${Date.now()}" style="max-width:116px;max-height:116px;object-fit:contain">`;
+    document.getElementById('reportLogoMsg').innerHTML = '<span style="color:var(--green)">&#10003; Report logo uploaded</span>';
+    toast('Report logo uploaded');
+  } else { toast(r.error || 'Upload failed'); }
+}
+async function deleteReportLogo() {
+  showConfirm({
+    title: 'Remove Report Logo',
+    message: 'Remove the report logo?\nPDFs will fall back to the system logo instead.',
+    confirmText: 'Remove', danger: true,
+    onConfirm: async () => {
+      await fetch('api/settings.php?action=delete_report_logo',{method:'POST'});
+      document.getElementById('reportLogoPreview').innerHTML =
+        '<span class="muted" style="font-size:.8rem;text-align:center;padding:8px">No report logo</span>';
+      document.getElementById('reportLogoMsg').innerHTML = '';
+      toast('Report logo removed');
+    }
+  });
+}
+async function saveAdminHeaderSettings() {
+  const payload = typeof collectHdrFonts === 'function' ? collectHdrFonts() : {};
+  const r = await fetch('api/settings.php?action=save_global_header', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  }).then(r=>r.json());
+  toast(r.ok ? 'Header font settings saved for all accounts' : (r.error || 'Error saving'));
+}
 async function createAdmin() {
   const name=document.getElementById('adm_name').value.trim();
   const email=document.getElementById('adm_email').value.trim();

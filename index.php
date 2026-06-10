@@ -61,17 +61,6 @@ body, input, select, button { font-family: <?= $fontFamily ?>; }
         </div>
       <?php endif; ?>
     </div>
-    <!-- Role indicators -->
-    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap">
-      <span style="background:var(--blue-soft);color:var(--blue);padding:5px 10px;border-radius:8px;font-size:.82rem;font-weight:500">
-        &#128101; Teacher
-      </span>
-      <span class="muted" style="align-self:center">&amp;</span>
-      <span style="background:var(--amber-soft);color:var(--amber);padding:5px 10px;border-radius:8px;font-size:.82rem;font-weight:500">
-        &#128274; Admin
-      </span>
-      <span class="muted" style="align-self:center;font-size:.82rem">use this same login</span>
-    </div>
     <?php if ($error): ?>
       <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
@@ -89,20 +78,8 @@ body, input, select, button { font-family: <?= $fontFamily ?>; }
         Sign In
       </button>
     </form>
-    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.82rem">
-      <div style="background:var(--blue-soft);border-radius:10px;padding:10px 12px">
-        <strong style="color:var(--blue)">&#128101; Teachers</strong>
-        <div class="muted" style="margin-top:4px">Go to their class dashboard to manage grades</div>
-      </div>
-      <div style="background:var(--amber-soft);border-radius:10px;padding:10px 12px">
-        <strong style="color:var(--amber)">&#128274; Admins</strong>
-        <div class="muted" style="margin-top:4px">Go to the admin panel to view all teachers' records</div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap;gap:8px">
+    <div style="margin-top:18px">
       <a href="register.php" class="muted" style="font-size:.88rem">New teacher? Create account</a>
-      <a href="install.php" class="muted" style="font-size:.82rem">Setup / Install</a>
     </div>
   </div>
 </div>

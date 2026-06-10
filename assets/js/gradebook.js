@@ -643,8 +643,8 @@ function openCriteria() {
   }).join('');
   document.getElementById('termWeightRows').innerHTML = DATA.terms.map(t => `
     <div class="field"><label>${esc(t)} (%)</label>
-    <input type="number" step="0.01" data-tw="${esc(t)}"
-      value="${DATA.term_weights[t] ?? (100 / DATA.terms.length).toFixed(2)}" oninput="updateCritStatus()"></div>
+    <input type="number" step="1" data-tw="${esc(t)}"
+      value="${DATA.term_weights[t] != null ? Math.round(+DATA.term_weights[t]) : Math.round(100 / DATA.terms.length)}" oninput="updateCritStatus()"></div>
   `).join('');
   updateCritStatus();
   document.getElementById('criteriaModal').classList.add('show');
@@ -661,7 +661,7 @@ function critBlock(term, cr) {
       <div style="flex:2"><label>Criterion name</label>
         <input data-f="name" placeholder="e.g. Quizzes" value="${esc(cr?.name || '')}"></div>
       <div style="flex:1"><label>Weight %</label>
-        <input data-f="weight" type="number" step="0.01" value="${cr?.weight ?? ''}" oninput="updateCritStatus()"></div>
+        <input data-f="weight" type="number" step="1" value="${cr?.weight != null ? Math.round(+cr.weight) : ''}" oninput="updateCritStatus()"></div>
       ${dupBtn}
       <button class="btn btn-ghost btn-sm" onclick="this.closest('[data-critrow]').remove();updateCritStatus()">Remove</button>
     </div>
@@ -677,7 +677,7 @@ function actRow(a) {
   return `<div class="row" data-actrow style="margin-bottom:6px;align-items:flex-end">
     <input type="hidden" data-aid value="${a?.id || ''}">
     <div style="flex:1"><input data-af="label" placeholder="Q1" value="${esc(a?.label || '')}"></div>
-    <div style="flex:1"><input data-af="perfect" type="number" step="0.01" placeholder="Perfect score" value="${a?.perfect_score ?? ''}"></div>
+    <div style="flex:1"><input data-af="perfect" type="number" step="1" placeholder="Perfect score" value="${a?.perfect_score != null ? Math.round(+a.perfect_score) : ''}"></div>
     <button class="btn btn-ghost btn-sm" onclick="this.closest('[data-actrow]').remove()">&times;</button>
   </div>`;
 }
@@ -711,15 +711,15 @@ function updateCritStatus() {
       const over = sum > 100;
       const color = ok ? 'var(--green)' : 'var(--red)';
       const msg = ok ? ' \u2713 Ready to save'
-        : over ? ` \u2014 over by ${(sum-100).toFixed(2)}% (reduce weights to reach 100%)`
-        : ` \u2014 ${(100-sum).toFixed(2)}% remaining (add more criteria or increase weights)`;
-      el.innerHTML = `Criteria weights: <strong style="color:${color}">${sum.toFixed(2)}%</strong>`
+        : over ? ` \u2014 over by ${Math.round(sum-100)}% (reduce weights to reach 100%)`
+        : ` \u2014 ${Math.round(100-sum)}% remaining (add more criteria or increase weights)`;
+      el.innerHTML = `Criteria weights: <strong style="color:${color}">${Math.round(sum)}%</strong>`
         + `<span style="color:${color};font-size:.85rem">${msg}</span>`;
     }
   });
   const twOk = Math.abs(twSum - 100) < 0.01;
   document.getElementById('critWeightStatus').innerHTML =
-    `Term weights for Final Grade: <strong style="color:${twOk?'var(--green)':'var(--red)'}">${twSum.toFixed(2)}%</strong>` +
+    `Term weights for Final Grade: <strong style="color:${twOk?'var(--green)':'var(--red)'}">${Math.round(twSum)}%</strong>` +
     (twOk ? ' \u2713' : ' (must total 100)');
 }
 
@@ -733,7 +733,7 @@ async function saveCriteria() {
       sum += parseFloat(r.querySelector('[data-f="weight"]').value) || 0;
     });
     if (sum > 0 && Math.abs(sum - 100) > 0.01) {
-      validationErrors.push(`${term}: criteria weights total ${sum.toFixed(2)}% (must be exactly 100%)`);
+      validationErrors.push(`${term}: criteria weights total ${Math.round(sum)}% (must be exactly 100%)`);
     }
   });
   if (validationErrors.length) {

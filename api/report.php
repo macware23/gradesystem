@@ -149,33 +149,101 @@ class GradeReport extends FPDF {
     public array  $sigTxtRgb    = [0,0,0];
     public array  $pageBgRgb    = [255,255,255];
     public float  $hdrHeight  = 28.0;
-    public string $teacherName = '';
-    private bool  $logoLoaded = false;
+    public string $teacherName  = '';
+    public string $semesterLine = '';
+    public string $gradeLabel   = '';
+    public string $courseLine   = '';
+    public string $sectionLine  = '';
+    public string $schedule     = '';
+    // Per-line header font settings
+    public string $hdrSemFont  = 'Helvetica'; public float $hdrSemSize  = 9.0;  public string $hdrSemStyle  = '';
+    public string $hdrLblFont  = 'Times';     public float $hdrLblSize  = 11.0; public string $hdrLblStyle  = 'B';
+    public string $hdrCrsFont  = 'Helvetica'; public float $hdrCrsSize  = 9.5;  public string $hdrCrsStyle  = '';
+    public string $hdrSecFont  = 'Helvetica'; public float $hdrSecSize  = 9.5;  public string $hdrSecStyle  = 'B';
+    public string $hdrSchFont  = 'Helvetica'; public float $hdrSchSize  = 9.0;  public string $hdrSchStyle  = 'B';
+    private bool  $logoLoaded  = false;
 
     function Header() {
-        // Page background
+        $pw = $this->GetPageWidth();
+
+        // White page background
         $this->SetFillColor(...$this->pageBgRgb);
-        $this->Rect(0, 0, $this->GetPageWidth(), $this->GetPageHeight(), 'F');
-        // Header bar
-        $this->SetFillColor(...$this->hdrBg);
-        $this->Rect(0, 0, $this->GetPageWidth(), $this->hdrHeight, 'F');
-        $x = 6;
+        $this->Rect(0, 0, $pw, $this->GetPageHeight(), 'F');
+
+        $y = 4.0;
+
+        // ── Line 1: Logo (centered) ──────────────────────────────────
         if ($this->logoPath && file_exists($this->logoPath)) {
-            try { $lh=$this->hdrHeight-8; $this->Image($this->logoPath,$x,4,0,$lh); $x+=$lh*1.1+2; }
-            catch (\Throwable $e) {}
+            try {
+                $logoH = 24.0;
+                $ext   = strtolower(pathinfo($this->logoPath, PATHINFO_EXTENSION));
+                $logoW = $logoH; // default to square
+                if (in_array($ext, ['png','jpg','jpeg','gif'])) {
+                    $info = @getimagesize($this->logoPath);
+                    if ($info && $info[0] > 0 && $info[1] > 0) {
+                        $logoW = ($info[0] / $info[1]) * $logoH;
+                    }
+                }
+                $imgX = max(0, ($pw - $logoW) / 2);
+                $this->Image($this->logoPath, $imgX, $y, $logoW, $logoH);
+                $y += $logoH + 2.0;
+            } catch (\Throwable $e) {}
         }
-        $this->SetXY($x, 5);
-        $this->SetFont($this->titleFont, 'B', 14);
-        $this->SetTextColor(...$this->hdrTxtRgb);
-        $this->Cell(0, 7, $this->schoolName ?: 'GradeFlow', 0, 1, 'L');
-        $this->SetX($x);
-        $this->SetFont($this->bodyFont, '', 8);
-        $this->SetTextColor(...$this->subTitleRgb);
-        $this->Cell(140, 5, $this->schoolAddr ?: $this->subtitle, 0, 0, 'L');
-        $this->SetFont($this->bodyFont, 'B', 9);
-        $this->SetTextColor(...$this->titleTxtRgb);
-        $this->Cell(0, 5, $this->rptTitle, 0, 0, 'R');
-        $this->SetY($this->hdrHeight + 3);
+
+        $y += 2.0;
+
+        // ── Line 2: Semester and School Year (centered) ──────────────
+        if ($this->semesterLine) {
+            $this->SetXY(0, $y);
+            $this->SetFont($this->hdrSemFont, $this->hdrSemStyle, $this->hdrSemSize);
+            $this->SetTextColor(0, 0, 0);
+            $lh = $this->hdrSemSize * 0.56;
+            $this->Cell($pw, $lh, $this->semesterLine, 0, 1, 'C');
+            $y += $lh + 0.5;
+        }
+
+        // ── Line 3: Grade Label (centered) ───────────────────────────
+        $this->SetXY(0, $y);
+        $this->SetFont($this->hdrLblFont, $this->hdrLblStyle, $this->hdrLblSize);
+        $this->SetTextColor(0, 0, 0);
+        $lh = $this->hdrLblSize * 0.6;
+        $this->Cell($pw, $lh, $this->gradeLabel ?: strtoupper($this->rptTitle), 0, 1, 'C');
+        $y += $lh + 0.5;
+
+        // ── Line 4a: Course Name (centered) ──────────────────────────
+        if ($this->courseLine) {
+            $this->SetXY(0, $y);
+            $this->SetFont($this->hdrCrsFont, $this->hdrCrsStyle, $this->hdrCrsSize);
+            $this->SetTextColor(0, 0, 0);
+            $lh = $this->hdrCrsSize * 0.56;
+            $this->Cell($pw, $lh, $this->courseLine, 0, 1, 'C');
+            $y += $lh + 0.5;
+        }
+
+        // ── Line 4b: Section (centered) ──────────────────────────────
+        if ($this->sectionLine) {
+            $this->SetXY(0, $y);
+            $this->SetFont($this->hdrSecFont, $this->hdrSecStyle, $this->hdrSecSize);
+            $this->SetTextColor(0, 0, 0);
+            $lh = $this->hdrSecSize * 0.56;
+            $this->Cell($pw, $lh, $this->sectionLine, 0, 1, 'C');
+            $y += $lh + 0.5;
+        }
+
+        // ── Line 5: Schedule of Class (centered) ─────────────────────
+        if ($this->schedule) {
+            $this->SetXY(0, $y);
+            $this->SetFont($this->hdrSchFont, $this->hdrSchStyle, $this->hdrSchSize);
+            $this->SetTextColor(0, 0, 0);
+            $lh = $this->hdrSchSize * 0.56;
+            $this->Cell($pw, $lh, $this->schedule, 0, 1, 'C');
+            $y += $lh + 0.5;
+        }
+
+        $y += 1.5;
+
+        $this->hdrHeight = $y;
+        $this->SetY($y);
         $this->SetTextColor(...$this->textRgb);
     }
 
@@ -190,21 +258,16 @@ class GradeReport extends FPDF {
     }
 
     function ClassInfo(array $class, array $cs): void {
-        if ($this->GetY() < $this->hdrHeight + 3) $this->SetY($this->hdrHeight + 3);
-        $this->SetFont($this->titleFont, 'B', 13);
-        $this->SetTextColor(...$this->subjTxtRgb);
-        $name = pdfName($class['subject_name'] . ($class['section'] ? '  (' . $class['section'] . ')' : ''));
-        $this->Cell(0, 8, $name, 0, 1, 'L');
+        if ($this->GetY() < $this->hdrHeight + 1) $this->SetY($this->hdrHeight + 1);
         $this->SetFont($this->bodyFont, '', 8.5);
         $this->SetTextColor(...$this->infoTxtRgb);
         $info = [];
-        if ($class['subject_code']) $info[] = 'Code: '.$class['subject_code'];
-        if ($class['school_year'])  $info[] = 'S.Y.: '.$class['school_year'];
-        $info[] = 'Instructor: '.$class['teacher_name'];
-        $info[] = 'Number of Students Passed: '.$this->passedCount;
-        $info[] = 'Number of Students Failed: '.$this->failedCount;
-        $this->Cell(0, 5, implode('     ', $info), 0, 1);
-        $this->Ln(2);
+        $info[] = 'Instructor: ' . pdfName($class['teacher_name'] ?? '');
+        if (!empty($class['subject_code'])) $info[] = 'Code: ' . $class['subject_code'];
+        $info[] = 'Students Passed: ' . $this->passedCount;
+        $info[] = 'Students Failed: ' . $this->failedCount;
+        $this->Cell(0, 5, implode('     ', $info), 0, 1, 'C');
+        $this->Ln(1);
         $this->SetFillColor(...$this->accRgb);
         $this->Rect(0, $this->GetY(), $this->GetPageWidth(), 0.8, 'F');
         $this->Ln(3);
@@ -336,16 +399,73 @@ $pdf->bodyFont   = $bodyFont;
 $pdf->titleFont  = $titleFont;
 $pdf->bodySize   = $fontSize;
 $pdf->teacherName = pdfName($class['teacher_name'] ?? '');
-$pdf->logoPath   = $logoPath ? __DIR__ . '/../' . $logoPath : '';
+
+// Use report logo for PDFs; fall back to system/nav logo if not set
+$reportLogoPath = trim($ss['report_logo_path'] ?? '');
+$activeLogo = '';
+if ($reportLogoPath) {
+    $rl = __DIR__ . '/../' . $reportLogoPath;
+    if (file_exists($rl)) $activeLogo = $rl;
+}
+if (!$activeLogo && $logoPath) {
+    $sl = __DIR__ . '/../' . $logoPath;
+    if (file_exists($sl)) $activeLogo = $sl;
+}
+$pdf->logoPath = $activeLogo;
+
 // Use Manila Philippines timezone for all dates
 date_default_timezone_set('Asia/Manila');
+
+// Build centered header lines from class data
+$semLine = '';
+if (!empty($class['semester']))   $semLine  = $class['semester'];
+if (!empty($class['school_year'])) $semLine .= ($semLine ? ', A.Y. ' : 'A.Y. ') . $class['school_year'];
+
+$pdf->semesterLine = $semLine;
+$pdf->courseLine   = pdfName(trim($class['subject_name'] ?? ''));
+$pdf->sectionLine  = pdfName(trim($class['section'] ?? ''));
+$pdf->schedule     = pdfName(trim($class['schedule'] ?? ''));
+
+// Per-line header font settings (family / size / style)
+$validFonts = ['Helvetica','Times','Courier'];
+$validStyle = fn(string $s): string => preg_replace('/[^BIUSD]/','', strtoupper($s));
+$hdrSemFont  = in_array($ss['pdf_hdr_sem_font'] ?? '', $validFonts) ? $ss['pdf_hdr_sem_font']  : 'Helvetica';
+$hdrSemSize  = max(6, min(24, (float)($ss['pdf_hdr_sem_size']  ?? 9)));
+$hdrSemStyle = $validStyle($ss['pdf_hdr_sem_style'] ?? '');
+$hdrLblFont  = in_array($ss['pdf_hdr_lbl_font'] ?? '', $validFonts) ? $ss['pdf_hdr_lbl_font']  : 'Times';
+$hdrLblSize  = max(6, min(24, (float)($ss['pdf_hdr_lbl_size']  ?? 11)));
+$hdrLblStyle = $validStyle($ss['pdf_hdr_lbl_style'] ?? 'B');
+$hdrCrsFont  = in_array($ss['pdf_hdr_crs_font'] ?? '', $validFonts) ? $ss['pdf_hdr_crs_font']  : 'Helvetica';
+$hdrCrsSize  = max(6, min(24, (float)($ss['pdf_hdr_crs_size']  ?? 9.5)));
+$hdrCrsStyle = $validStyle($ss['pdf_hdr_crs_style'] ?? '');
+$hdrSecFont  = in_array($ss['pdf_hdr_sec_font'] ?? '', $validFonts) ? $ss['pdf_hdr_sec_font']  : 'Helvetica';
+$hdrSecSize  = max(6, min(24, (float)($ss['pdf_hdr_sec_size']  ?? 9.5)));
+$hdrSecStyle = $validStyle($ss['pdf_hdr_sec_style'] ?? 'B');
+$hdrSchFont  = in_array($ss['pdf_hdr_sch_font'] ?? '', $validFonts) ? $ss['pdf_hdr_sch_font']  : 'Helvetica';
+$hdrSchSize  = max(6, min(24, (float)($ss['pdf_hdr_sch_size']  ?? 9)));
+$hdrSchStyle = $validStyle($ss['pdf_hdr_sch_style'] ?? 'B');
+
+$pdf->hdrSemFont  = $hdrSemFont;  $pdf->hdrSemSize  = $hdrSemSize;  $pdf->hdrSemStyle  = $hdrSemStyle;
+$pdf->hdrLblFont  = $hdrLblFont;  $pdf->hdrLblSize  = $hdrLblSize;  $pdf->hdrLblStyle  = $hdrLblStyle;
+$pdf->hdrCrsFont  = $hdrCrsFont;  $pdf->hdrCrsSize  = $hdrCrsSize;  $pdf->hdrCrsStyle  = $hdrCrsStyle;
+$pdf->hdrSecFont  = $hdrSecFont;  $pdf->hdrSecSize  = $hdrSecSize;  $pdf->hdrSecStyle  = $hdrSecStyle;
+$pdf->hdrSchFont  = $hdrSchFont;  $pdf->hdrSchSize  = $hdrSchSize;  $pdf->hdrSchStyle  = $hdrSchStyle;
 
 $pdf->rptTitle   = $type === 'final' ? 'Final Grade Report'
                  : ($type === 'term' ? $term . ' Grade Report'
                  : $term . ' Attendance Report');
+$pdf->gradeLabel = $type === 'final' ? 'FINAL CLASS GRADE'
+                 : ($type === 'term' ? strtoupper($term) . ' GRADE'
+                 : strtoupper($term) . ' ATTENDANCE');
+
 $pdf->hdrHeight  = 28.0;
 $pdf->SetMargins(8, 8, 8);
 $pdf->AliasNbPages();
+// Disable FPDF's built-in auto page break so our manual check (which also
+// draws ClassInfo + the table header rows) is the only page-break mechanism.
+// Without this, FPDF fires AddPage()+Header() internally before our check,
+// producing continuation pages that have the document title but no table headers.
+$pdf->SetAutoPageBreak(false);
 $pdf->AddPage();
 // ClassInfo is called inside each type block AFTER pass/fail counts are set
 
@@ -412,17 +532,17 @@ if ($type === 'final') {
 
     $drawFinalHeader();
 
-    $maxRowsPerPage = 25;
-    $rowCount = 0;
-    $i=1; $sum=0; $cnt=0; $passN=0; $even=false;
+    // Break when the next data row would overlap the footer (14 mm) + 5 mm buffer
+    $bottomY = $pdf->GetPageHeight() - 19;
+    $i=1; $even=false;
     foreach ($students as $s) {
-        if ($rowCount >= $maxRowsPerPage) {
+        if ($pdf->GetY() + $rowH > $bottomY) {
             $pdf->AddPage();
             $pdf->SetLeftMargin($marginX); $pdf->SetRightMargin($marginX);
             $pdf->ClassInfo($class,$cs);
             $pdf->SetX($marginX);
             $drawFinalHeader();
-            $rowCount = 0; $even = false;
+            $even = false;
         }
         $g = compute_final_grade((int)$s['id'],$classId);
         $final=$g['final']; $pass=passes($classId,$final);
@@ -436,17 +556,8 @@ if ($type === 'final') {
         $vals[]=$pass===true?'PASSED':($pass===false?'FAILED':'INC');
         $ps=$pass===true?'P':($pass===false?'F':'');
         $pdf->DataRow($cols,$vals,$even,$finalCol,$ps,$termColIndices,(float)$cs['passing']);
-        $even=!$even; $rowCount++;
-        if($final!==null){$sum+=$final;$cnt++;if($pass)$passN++;}
+        $even=!$even;
     }
-    $pdf->SetX($marginX);
-    $pdf->Ln(4);
-    $pdf->SetFont($titleFont,'B',10); $pdf->SetTextColor(...$subjTxtRgb);
-    $pdf->Cell(0,5,'Class Summary',0,1);
-    $pdf->SetFont($bodyFont,'',9); $pdf->SetTextColor(...$infoTxtRgb);
-    $avg=$cnt?number_format($sum/$cnt,0):'N/A';
-    $rate=$cnt?number_format(100*$passN/$cnt,1).'%':'N/A';
-    $pdf->Cell(0,5,'Students: '.count($students).'     Graded: '.$cnt.'     Class Average: '.$avg.'     Passing Rate: '.$rate,0,1);
     $pdf->SignatureBlock();
 
 // ================================================================
@@ -555,59 +666,14 @@ if ($type === 'final') {
     $pdf->SetRightMargin($marginX);
     $pdf->SetX($marginX);
 
-    // ---- HEADER ROW 1: criterion group headers ----
     $pdf->bodySize = $fontSize;
     $rowH = max(5.5, $fontSize * 0.82);
-    $pdf->SetFont($bodyFont,'B',$fontSize);
-    $pdf->SetFillColor(...$thBgRgb);
-    $pdf->SetTextColor(...$thTxtRgb);
-    $pdf->SetDrawColor(...$borderRgb); $pdf->SetLineWidth(0.15);
-    $pdf->SetX($marginX);
-    $pdf->Cell($numW,$rowH,'#',1,0,'C',true);
-    $pdf->Cell($nameW,$rowH,'Student Name',1,0,'L',true);
-    foreach($criteria as $c){
-        $span = count($c['acts'])*($rawW+$eqW) + $avgW + $wsW;
-        $lbl  = $c['name'].' ('.number_format($c['weight'],0).'%)';
-        $pdf->Cell($span,$rowH,$lbl,1,0,'C',true);
-    }
-    $pdf->Cell($gradeW,$rowH,'GRADE',1,1,'C',true);
 
-    // ---- HEADER ROW 2: activity columns + AVG/WS ----
-    $pdf->SetX($marginX);
-    $pdf->SetFillColor(...$th2BgRgb); $pdf->SetTextColor(...$th2TxtRgb);
-    $pdf->Cell($numW,5,'',1,0,'C',true);
-    $pdf->Cell($nameW,5,'',1,0,'C',true);
-    foreach($criteria as $c){
-        foreach($c['acts'] as $a){
-            $pdf->Cell($rawW,5,$a['label'],1,0,'C',true);
-            $pdf->Cell($eqW, 5,'Eq',1,0,'C',true);
-        }
-        $pdf->Cell($avgW,5,'AVG',1,0,'C',true);
-        $pdf->Cell($wsW, 5,'WS',1,0,'C',true);
-    }
-    $pdf->Cell($gradeW,5,'',1,1,'C',true);
-
-    // ---- HEADER ROW 3: perfect score sub-labels ----
-    $pdf->SetX($marginX);
-    $pdf->SetFillColor(...$th2BgRgb); $pdf->SetTextColor(...$th2TxtRgb);
-    $pdf->Cell($numW,4,'',1,0,'C',true);
-    $pdf->Cell($nameW,4,'',1,0,'L',true);
-    foreach($criteria as $c){
-        foreach($c['acts'] as $a){
-            $pdf->Cell($rawW,4,'/'.(int)$a['perfect_score'],1,0,'C',true);
-            $pdf->Cell($eqW, 4,'',1,0,'C',true);
-        }
-        $pdf->Cell($avgW,4,'',1,0,'C',true);
-        $pdf->Cell($wsW, 4,'',1,0,'C',true);
-    }
-    $pdf->Cell($gradeW,4,'',1,1,'C',true);
-    $pdf->SetDrawColor(...$borderRgb); $pdf->SetLineWidth(0.1);
-    $pdf->SetTextColor(...$textRgb);
-
-    // Helper: re-draw header on continuation pages
+    // Single header-drawing function used for page 1 AND every continuation page
     $drawTermHeader = function() use ($pdf,$criteria,$bodyFont,$fontSize,
-        $avgW,$wsW,$numW,$nameW,$gradeW,$rawW,$eqW,$term,$rowH,$textRgb,
+        $avgW,$wsW,$numW,$nameW,$gradeW,$rawW,$eqW,$rowH,$textRgb,
         $thBgRgb,$thTxtRgb,$th2BgRgb,$th2TxtRgb,$borderRgb,$marginX) {
+        // Row 1: criterion group spans  (#  |  Student Name  |  Criteria…  |  GRADE)
         $pdf->SetX($marginX);
         $pdf->SetFont($bodyFont,'B',$fontSize);
         $pdf->SetFillColor(...$thBgRgb);
@@ -616,35 +682,56 @@ if ($type === 'final') {
         $pdf->Cell($numW,$rowH,'#',1,0,'C',true);
         $pdf->Cell($nameW,$rowH,'Student Name',1,0,'L',true);
         foreach($criteria as $c){
-            $span=count($c['acts'])*($rawW+$eqW)+$avgW+$wsW;
+            $span = count($c['acts'])*($rawW+$eqW) + $avgW + $wsW;
             $pdf->Cell($span,$rowH,$c['name'].' ('.number_format($c['weight'],0).'%)',1,0,'C',true);
         }
         $pdf->Cell($gradeW,$rowH,'GRADE',1,1,'C',true);
+        // Row 2: activity labels lined under each criterion
         $pdf->SetX($marginX);
         $pdf->SetFillColor(...$th2BgRgb); $pdf->SetTextColor(...$th2TxtRgb);
-        $pdf->Cell($numW,5,'',1,0,'C',true); $pdf->Cell($nameW,5,'',1,0,'C',true);
-        foreach($criteria as $c){ foreach($c['acts'] as $a){ $pdf->Cell($rawW,5,$a['label'],1,0,'C',true); $pdf->Cell($eqW,5,'Eq',1,0,'C',true); } $pdf->Cell($avgW,5,'AVG',1,0,'C',true); $pdf->Cell($wsW,5,'WS',1,0,'C',true); }
+        $pdf->Cell($numW,5,'',1,0,'C',true);
+        $pdf->Cell($nameW,5,'',1,0,'C',true);
+        foreach($criteria as $c){
+            foreach($c['acts'] as $a){
+                $pdf->Cell($rawW,5,$a['label'],1,0,'C',true);
+                $pdf->Cell($eqW, 5,'Eq',1,0,'C',true);
+            }
+            $pdf->Cell($avgW,5,'AVG',1,0,'C',true);
+            $pdf->Cell($wsW, 5,'WS',1,0,'C',true);
+        }
         $pdf->Cell($gradeW,5,'',1,1,'C',true);
+        // Row 3: perfect-score sub-labels
         $pdf->SetX($marginX);
         $pdf->SetFillColor(...$th2BgRgb); $pdf->SetTextColor(...$th2TxtRgb);
-        $pdf->Cell($numW,4,'',1,0,'C',true); $pdf->Cell($nameW,4,'',1,0,'L',true);
-        foreach($criteria as $c){ foreach($c['acts'] as $a){ $pdf->Cell($rawW,4,'/'.(int)$a['perfect_score'],1,0,'C',true); $pdf->Cell($eqW,4,'',1,0,'C',true); } $pdf->Cell($avgW,4,'',1,0,'C',true); $pdf->Cell($wsW,4,'',1,0,'C',true); }
+        $pdf->Cell($numW,4,'',1,0,'C',true);
+        $pdf->Cell($nameW,4,'',1,0,'L',true);
+        foreach($criteria as $c){
+            foreach($c['acts'] as $a){
+                $pdf->Cell($rawW,4,'/'.(int)$a['perfect_score'],1,0,'C',true);
+                $pdf->Cell($eqW, 4,'',1,0,'C',true);
+            }
+            $pdf->Cell($avgW,4,'',1,0,'C',true);
+            $pdf->Cell($wsW, 4,'',1,0,'C',true);
+        }
         $pdf->Cell($gradeW,4,'',1,1,'C',true);
-        $pdf->SetDrawColor(...$borderRgb); $pdf->SetLineWidth(0.1); $pdf->SetTextColor(...$textRgb);
+        $pdf->SetDrawColor(...$borderRgb); $pdf->SetLineWidth(0.1);
+        $pdf->SetTextColor(...$textRgb);
         $pdf->SetX($marginX);
     };
 
-    // ---- DATA ROWS: max 20 per page ----
-    $maxRowsPerPage = 20;
-    $rowCount = 0;
+    $drawTermHeader();
+
+    // ---- DATA ROWS ----
+    // Break when the next row would overlap the footer (14 mm) + 5 mm buffer
+    $bottomY = $pdf->GetPageHeight() - 19;
     $i=1; $even=false;
     foreach($students as $s){
-        if($rowCount >= $maxRowsPerPage){
+        if($pdf->GetY() + $rowH > $bottomY){
             $pdf->AddPage();
             $pdf->SetLeftMargin($marginX); $pdf->SetRightMargin($marginX);
             $pdf->ClassInfo($class,$cs);
             $drawTermHeader();
-            $rowCount = 0; $even = false;
+            $even = false;
         }
         $tc = compute_term((int)$s['id'],$classId,$term,$cs);
         $base = $even ? $rowEvenRgb : $rowOddRgb;
@@ -705,7 +792,7 @@ if ($type === 'final') {
         $pdf->SetTextColor(...$textRgb);
         $pdf->SetFillColor(...$base);
         $pdf->SetX($marginX);
-        $even=!$even; $rowCount++;
+        $even=!$even;
     }
     $pdf->SignatureBlock();
 
@@ -726,9 +813,10 @@ if ($type === 'final') {
     foreach(array_slice($sessions,0,22) as $sess2) $cols[]=['label'=>$sess2['label'].($sess2['session_date']?' '.substr($sess2['session_date'],5):''),'w'=>$sw,'align'=>'C'];
     $cols[]=['label'=>'P','w'=>11,'align'=>'C'];$cols[]=['label'=>'A','w'=>11,'align'=>'C'];
     $cols[]=['label'=>'L','w'=>11,'align'=>'C'];$cols[]=['label'=>'Rate','w'=>15,'align'=>'C'];
+    $bottomY = $pdf->GetPageHeight() - 19;
     $pdf->TH($cols); $i=1; $even=false;
     foreach($students as $s){
-        if($pdf->GetY()>170){$pdf->AddPage();$pdf->ClassInfo($class,$cs);$pdf->TH($cols);}
+        if($pdf->GetY() + 6.5 > $bottomY){$pdf->AddPage();$pdf->ClassInfo($class,$cs);$pdf->TH($cols);}
         $vals=[$i++,pdfName(' '.$s['last_name'].', '.$s['first_name'])]; $P=$A=$L=0;
         foreach(array_slice($sessions,0,22) as $sess2){ $st=$recMap[$sess2['id']][$s['id']]??'P';$vals[]=$st; if($st==='P')$P++;elseif($st==='A')$A++;else$L++; }
         $rate=$total>0?number_format(($P+$L*0.5)/$total*100,0).'%':'--';

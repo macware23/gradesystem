@@ -148,6 +148,8 @@ if ($dbReady) {
     $pdo->exec("UPDATE teachers SET approved=1 WHERE approved=0");
     migrate($pdo, 'Upgrade: classes.semester',
         "ALTER TABLE classes ADD COLUMN semester VARCHAR(20) DEFAULT ''");
+    migrate($pdo, 'Upgrade: classes.schedule',
+        "ALTER TABLE classes ADD COLUMN schedule VARCHAR(120) DEFAULT ''");
     migrate($pdo, 'Upgrade: classes.is_archived',
         "ALTER TABLE classes ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0");
     // Add index to speed up filtering by teacher + archived status
@@ -368,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_admin']) && $d
           <button class="btn btn-primary" type="submit">Create Admin Account</button>
         </form>
         <?php else: ?>
-          <a class="btn btn-primary" href="login.php">Go to Login →</a>
+          <a class="btn btn-primary" href="index.php">Go to Login →</a>
         <?php endif; ?>
       </div>
 
@@ -383,7 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_admin']) && $d
             </div>
           </div>
           <span class="pill pill-green"><?= $aCount ?> admin<?= $aCount>1?'s':'' ?></span>
-          <a class="btn btn-primary" href="login.php">Go to Login →</a>
+          <a class="btn btn-primary" href="index.php">Go to Login →</a>
         </div>
       </div>
       <?php endif; ?>
@@ -393,39 +395,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_admin']) && $d
       <div class="card" style="margin-bottom:20px">
         <h2 style="margin-top:0">Quick Links</h2>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <a class="btn btn-primary" href="login.php">Go to Login →</a>
+          <a class="btn btn-primary" href="index.php">Go to Login →</a>
           <a class="btn btn-ghost"   href="register.php">Register a Teacher Account</a>
           <a class="btn btn-ghost"   href="install.php">Re-run Checks</a>
         </div>
       </div>
       <?php endif; ?>
-
-      <!-- How accounts work — always show when DB ready -->
-      <div class="card" style="background:var(--blue-soft);border-color:var(--blue)">
-        <h2 style="margin-top:0;color:var(--blue);font-size:1.05rem">How Accounts Work</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div>
-            <strong>&#128101; Teacher Account</strong>
-            <ul class="muted" style="margin:6px 0 0;padding-left:18px;font-size:.88rem;line-height:1.7">
-              <li>Created via <a href="register.php">register.php</a></li>
-              <li>Manages their own classes</li>
-              <li>Enters and edits grades</li>
-              <li>Generates PDF reports</li>
-              <li>Logs in at <a href="login.php">login.php</a></li>
-            </ul>
-          </div>
-          <div>
-            <strong>&#128274; Admin Account</strong>
-            <ul class="muted" style="margin:6px 0 0;padding-left:18px;font-size:.88rem;line-height:1.7">
-              <li>Created here (install.php)</li>
-              <li>Views ALL teachers' classes</li>
-              <li>Prints any class's reports</li>
-              <li><strong>Cannot edit grades</strong></li>
-              <li>Logs in at <a href="login.php">login.php</a> (same page)</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
     <?php endif; /* dbReady */ ?>
 

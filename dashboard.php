@@ -90,6 +90,12 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
       <div class="field" style="flex:.5"><label>Passing Grade</label><input id="cm_pass" type="number" step="0.01" value="75"></div>
     </div>
     <div class="help-note">Terms define your grading periods. Examples: <em>Prelim,Midterm,Finals</em> or <em>Endterm</em> or just <em>Semester</em>.</div>
+    <div class="row">
+      <div class="field" style="flex:1">
+        <label>Schedule of Class</label>
+        <input id="cm_schedule" placeholder="e.g. MWF 7:30-8:30, TTH 7:30-9:00" maxlength="120">
+      </div>
+    </div>
     <div class="row" style="margin-top:14px;align-items:flex-end">
       <div class="field" style="flex:0 0 100%"><label style="font-weight:600;color:var(--ink)">Transmutation (your school's grade scale)</label>
         <div class="help-note" style="margin-bottom:10px">When ON, raw scores are converted to grade equivalents. Turn OFF for plain percentage grading.</div></div>
@@ -235,6 +241,7 @@ function openClassModal(c) {
   document.getElementById('cm_transmute').value      = (c && c.use_transmutation != null) ? String(c.use_transmutation) : '1';
   document.getElementById('cm_cutoff').value         = c?.cutoff ?? 50;
   document.getElementById('cm_zero').value           = c?.zero_equiv ?? 65;
+  document.getElementById('cm_schedule').value       = c?.schedule || '';
   document.getElementById('classModal').classList.add('show');
 }
 
@@ -253,6 +260,7 @@ async function saveClass() {
     use_transmutation:document.getElementById('cm_transmute').value,
     cutoff:           document.getElementById('cm_cutoff').value,
     zero_equiv:       document.getElementById('cm_zero').value,
+    schedule:         document.getElementById('cm_schedule').value,
   });
   closeModal('classModal');
   toast('Class saved');
@@ -278,7 +286,10 @@ async function commitDelClass() {
   err.style.display = 'none';
   if (!pw.trim()) { err.textContent = 'Password is required.'; err.style.display = ''; document.getElementById('delClassPass').focus(); return; }
   btn.disabled = true; btn.textContent = 'Verifying…';
-  const vr = await api('verify_password', { password: pw });
+  const vr = await fetch('api/data.php?action=verify_password', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ password: pw })
+  }).then(r => r.json());
   if (!vr.ok) {
     err.textContent = 'Incorrect password. Class was NOT deleted.';
     err.style.display = '';

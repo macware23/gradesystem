@@ -21,7 +21,7 @@ $pdo    = db();
 $tid    = current_teacher_id();
 
 // Keys that belong to each category
-const GLOBAL_KEYS = ['school_name','school_address','logo_path','system_subtitle'];
+const GLOBAL_KEYS = ['school_name','school_address','logo_path','report_logo_path','system_subtitle'];
 const USER_KEYS   = [
     'web_accent','web_ink','web_text_color','web_font',
     'web_nav_text','web_paper','web_card','web_line','web_muted','web_link',
@@ -55,6 +55,15 @@ const USER_KEYS   = [
     'ai_stats_bg','ai_stats_val_txt','ai_stats_lbl_txt',
     'ai_body_txt','ai_info_txt','ai_footer_txt','ai_accent_rgb',
     'ai_page_bg',
+    // Report header customization (per-teacher)
+    'pdf_schedule',
+    'pdf_teacher_logo_path',
+    // Header line font settings
+    'pdf_hdr_sem_font',  'pdf_hdr_sem_size',  'pdf_hdr_sem_style',
+    'pdf_hdr_lbl_font',  'pdf_hdr_lbl_size',  'pdf_hdr_lbl_style',
+    'pdf_hdr_crs_font',  'pdf_hdr_crs_size',  'pdf_hdr_crs_style',
+    'pdf_hdr_sec_font',  'pdf_hdr_sec_size',  'pdf_hdr_sec_style',
+    'pdf_hdr_sch_font',  'pdf_hdr_sch_size',  'pdf_hdr_sch_style',
 ];
 
 switch ($action) {
@@ -110,6 +119,88 @@ case 'delete_logo': {
     $old = $pdo->query("SELECT setting_val FROM school_settings WHERE setting_key='logo_path'")->fetchColumn();
     if ($old && file_exists(__DIR__ . '/../' . $old)) @unlink(__DIR__ . '/../' . $old);
     $pdo->exec("UPDATE school_settings SET setting_val='' WHERE setting_key='logo_path'");
+    out(['ok'=>true]);
+}
+
+// ---- Upload report logo (global — PDF reports only) ----
+case 'upload_report_logo': {
+    require_admin();
+    if (!isset($_FILES['logo'])) fail('No file uploaded');
+    $f = $_FILES['logo'];
+    if (!in_array($f['type'], ['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp']))
+        fail('Only image files allowed (PNG, JPG, GIF, SVG, WEBP)');
+    if ($f['size'] > 2 * 1024 * 1024) fail('Logo must be under 2MB');
+    $ext  = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+    $name = 'report_logo_' . time() . '.' . $ext;
+    $dest = __DIR__ . '/../uploads/' . $name;
+    $old  = $pdo->query("SELECT setting_val FROM school_settings WHERE setting_key='report_logo_path'")->fetchColumn();
+    if ($old && file_exists(__DIR__ . '/../' . $old)) @unlink(__DIR__ . '/../' . $old);
+    if (!move_uploaded_file($f['tmp_name'], $dest)) fail('Upload failed');
+    $path = 'uploads/' . $name;
+    $pdo->prepare("INSERT INTO school_settings (setting_key,setting_val) VALUES ('report_logo_path',?)
+                   ON DUPLICATE KEY UPDATE setting_val=?")->execute([$path,$path]);
+    out(['ok'=>true, 'logo_path'=>$path]);
+}
+
+// ---- Delete report logo (global) ----
+case 'delete_report_logo': {
+    require_admin();
+    $old = $pdo->query("SELECT setting_val FROM school_settings WHERE setting_key='report_logo_path'")->fetchColumn();
+    if ($old && file_exists(__DIR__ . '/../' . $old)) @unlink(__DIR__ . '/../' . $old);
+    $pdo->exec("DELETE FROM school_settings WHERE setting_key='report_logo_path'");
+    out(['ok'=>true]);
+}
+
+// ---- Upload teacher personal logo ----
+case 'upload_teacher_logo': {
+    if (!isset($_FILES['logo'])) fail('No file uploaded');
+    $f = $_FILES['logo'];
+    if (!in_array($f['type'], ['image/png','image/jpeg','image/jpg','image/gif','image/svg+xml','image/webp']))
+        fail('Only image files allowed (PNG, JPG, GIF, SVG, WEBP)');
+    if ($f['size'] > 2 * 1024 * 1024) fail('Logo must be under 2MB');
+    $ext  = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+    $name = 'teacher_logo_' . $tid . '_' . time() . '.' . $ext;
+    $dest = __DIR__ . '/../uploads/' . $name;
+    // Delete old teacher logo
+    $old = $pdo->prepare("SELECT setting_val FROM user_settings WHERE teacher_id=? AND setting_key='pdf_teacher_logo_path'");
+    $old->execute([$tid]);
+    $oldPath = $old->fetchColumn();
+    if ($oldPath && file_exists(__DIR__ . '/../' . $oldPath)) @unlink(__DIR__ . '/../' . $oldPath);
+    if (!move_uploaded_file($f['tmp_name'], $dest)) fail('Upload failed');
+    $path = 'uploads/' . $name;
+    $pdo->prepare("INSERT INTO user_settings (teacher_id,setting_key,setting_val) VALUES (?,?,?)
+                   ON DUPLICATE KEY UPDATE setting_val=?")->execute([$tid,'pdf_teacher_logo_path',$path,$path]);
+    out(['ok'=>true, 'logo_path'=>$path]);
+}
+
+// ---- Delete teacher personal logo ----
+case 'delete_teacher_logo': {
+    $stmt = $pdo->prepare("SELECT setting_val FROM user_settings WHERE teacher_id=? AND setting_key='pdf_teacher_logo_path'");
+    $stmt->execute([$tid]);
+    $oldPath = $stmt->fetchColumn();
+    if ($oldPath && file_exists(__DIR__ . '/../' . $oldPath)) @unlink(__DIR__ . '/../' . $oldPath);
+    $pdo->prepare("INSERT INTO user_settings (teacher_id,setting_key,setting_val) VALUES (?,?,?)
+                   ON DUPLICATE KEY UPDATE setting_val=''")->execute([$tid,'pdf_teacher_logo_path','']);
+    out(['ok'=>true]);
+}
+
+// ---- Save global header font settings (admin only — writes to school_settings) ----
+case 'save_global_header': {
+    require_admin();
+    $d = body_json();
+    $hdrFontKeys = [
+        'pdf_hdr_sem_font','pdf_hdr_sem_size','pdf_hdr_sem_style',
+        'pdf_hdr_lbl_font','pdf_hdr_lbl_size','pdf_hdr_lbl_style',
+        'pdf_hdr_crs_font','pdf_hdr_crs_size','pdf_hdr_crs_style',
+        'pdf_hdr_sec_font','pdf_hdr_sec_size','pdf_hdr_sec_style',
+        'pdf_hdr_sch_font','pdf_hdr_sch_size','pdf_hdr_sch_style',
+    ];
+    $ins = $pdo->prepare(
+        'INSERT INTO school_settings (setting_key,setting_val) VALUES (?,?)
+         ON DUPLICATE KEY UPDATE setting_val=VALUES(setting_val)');
+    foreach ($hdrFontKeys as $key) {
+        if (array_key_exists($key, $d)) $ins->execute([$key, $d[$key]]);
+    }
     out(['ok'=>true]);
 }
 

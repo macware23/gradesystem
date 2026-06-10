@@ -232,13 +232,14 @@ case 'save_class': {
     $fields=[trim($d['subject_name']??''),$d['subject_code']??'',$d['section']??'',
              $d['term_system']??'Prelim,Midterm,Finals',$d['school_year']??'',$d['semester']??'',
              (float)($d['passing_grade']??75),(float)($d['cutoff']??50),
-             (float)($d['zero_equiv']??65),(int)($d['use_transmutation']??1)];
+             (float)($d['zero_equiv']??65),(int)($d['use_transmutation']??1),
+             trim($d['schedule']??'')];
     if ($cid) {
         if (!owns_class($cid)) fail('Not authorized',403);
-        $stmt=db()->prepare('UPDATE classes SET subject_name=?,subject_code=?,section=?,term_system=?,school_year=?,semester=?,passing_grade=?,cutoff=?,zero_equiv=?,use_transmutation=? WHERE id=?');
+        $stmt=db()->prepare('UPDATE classes SET subject_name=?,subject_code=?,section=?,term_system=?,school_year=?,semester=?,passing_grade=?,cutoff=?,zero_equiv=?,use_transmutation=?,schedule=? WHERE id=?');
         $stmt->execute([...$fields,$cid]); out(['ok'=>true,'id'=>$cid]);
     } else {
-        $stmt=db()->prepare('INSERT INTO classes (subject_name,subject_code,section,term_system,school_year,semester,passing_grade,cutoff,zero_equiv,use_transmutation,teacher_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+        $stmt=db()->prepare('INSERT INTO classes (subject_name,subject_code,section,term_system,school_year,semester,passing_grade,cutoff,zero_equiv,use_transmutation,schedule,teacher_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
         $stmt->execute([...$fields,$tid]); out(['ok'=>true,'id'=>db()->lastInsertId()]);
     }
 }

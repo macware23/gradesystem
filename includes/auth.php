@@ -41,7 +41,7 @@ function current_assignments(): array {
 }
 
 function require_login() {
-    if (!current_teacher_id()) { header('Location: login.php'); exit; }
+    if (!current_teacher_id()) { header('Location: index.php'); exit; }
 }
 function require_teacher() {
     require_login();
@@ -274,6 +274,15 @@ function school_settings(): array {
         'pdf_footer_txt' => '160,160,160',
         'pdf_sig_txt'    => '0,0,0',
         'pdf_page_bg'    => '255,255,255',
+        // Report header customization (per-teacher)
+        'pdf_schedule'           => '',
+        'pdf_teacher_logo_path'  => '',
+        // Header line font settings
+        'pdf_hdr_sem_font'  => 'Helvetica', 'pdf_hdr_sem_size'  => '9',   'pdf_hdr_sem_style'  => '',
+        'pdf_hdr_lbl_font'  => 'Times',     'pdf_hdr_lbl_size'  => '11',  'pdf_hdr_lbl_style'  => 'B',
+        'pdf_hdr_crs_font'  => 'Helvetica', 'pdf_hdr_crs_size'  => '9.5', 'pdf_hdr_crs_style'  => '',
+        'pdf_hdr_sec_font'  => 'Helvetica', 'pdf_hdr_sec_size'  => '9.5', 'pdf_hdr_sec_style'  => 'B',
+        'pdf_hdr_sch_font'  => 'Helvetica', 'pdf_hdr_sch_size'  => '9',   'pdf_hdr_sch_style'  => 'B',
         // AI Intervention Report colors — all text black by default
         'ai_hdr_bg'          => '29,36,51',
         'ai_hdr_school_txt'  => '0,0,0',
