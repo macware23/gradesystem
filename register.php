@@ -25,7 +25,7 @@ $ink    = htmlspecialchars($ss['web_ink']    ?? '#1d2433');
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Teacher Registration — <?= htmlspecialchars($ss['system_subtitle'] ?? 'GradeFlow') ?></title>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <style>:root{--amber:<?= $accent ?>;--ink:<?= $ink ?>;}</style>
 </head>
 <body>

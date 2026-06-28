@@ -13,7 +13,7 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Classes — <?= htmlspecialchars($_pageSubtitle) ?></title>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 </head>
 <body>
 <?php require __DIR__ . '/includes/topbar.php'; ?>
@@ -100,7 +100,7 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
       <div class="field" style="flex:0 0 100%"><label style="font-weight:600;color:var(--ink)">Transmutation (your school's grade scale)</label>
         <div class="help-note" style="margin-bottom:10px">When ON, raw scores are converted to grade equivalents. Turn OFF for plain percentage grading.</div></div>
       <div class="field" style="flex:.6"><label>Transmute?</label>
-        <select id="cm_transmute"><option value="1">Yes (transmutation table)</option><option value="0">No (plain %)</option></select></div>
+        <select id="cm_transmute"><option value="1">Yes (transmutation table)</option><option value="0">No (plain %)</option><option value="2">No (common) — (raw/perfect)×50+50</option></select></div>
       <div class="field" style="flex:.5"><label>Cut Off</label><input id="cm_cutoff" type="number" step="0.01" value="50"></div>
       <div class="field" style="flex:.5"><label>Zero Equivalent</label><input id="cm_zero" type="number" step="0.01" value="65"></div>
     </div>

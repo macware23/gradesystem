@@ -35,6 +35,24 @@ function db() {
             http_response_code(500);
             die('Database connection failed: ' . htmlspecialchars($e->getMessage()));
         }
+        // Create performance indexes once. The flag file prevents re-running on every request.
+        $flag = __DIR__ . '/../.db_indexes_ok';
+        if (!file_exists($flag)) {
+            foreach ([
+                'ALTER TABLE classes      ADD INDEX idx_cls_teacher  (teacher_id, is_archived)',
+                'ALTER TABLE classes      ADD INDEX idx_cls_sort      (teacher_id, sort_order)',
+                'ALTER TABLE criteria     ADD INDEX idx_crit_class    (class_id, term)',
+                'ALTER TABLE activities   ADD INDEX idx_act_crit      (criterion_id, sort_order)',
+                'ALTER TABLE students     ADD INDEX idx_stu_class     (class_id, sort_order)',
+                'ALTER TABLE scores       ADD INDEX idx_sc_student    (student_id)',
+                'ALTER TABLE scores       ADD INDEX idx_sc_activity   (activity_id)',
+                'ALTER TABLE teachers     ADD INDEX idx_tch_college   (college, department)',
+                'ALTER TABLE user_settings ADD INDEX idx_us_teacher   (teacher_id)',
+            ] as $sql) {
+                try { $pdo->exec($sql); } catch (\Throwable $e) { /* already exists */ }
+            }
+            file_put_contents($flag, date('c'));
+        }
     }
     return $pdo;
 }

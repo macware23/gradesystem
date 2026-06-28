@@ -53,9 +53,34 @@ $hlRmkInc       = htmlspecialchars($ss['hl_remarks_inc']  ?? '#fff3cd');
 $hlRmkIncTxt    = htmlspecialchars($ss['hl_remarks_inc_txt'] ?? '#856404');
 $hlAiBtn        = htmlspecialchars($ss['hl_ai_btn']       ?? '');
 $hlAiBtnTxt     = htmlspecialchars($ss['hl_ai_btn_txt']   ?? '#fff');
-$logoPath = $ss['logo_path']      ?? '';
-$schoolName = htmlspecialchars($ss['school_name'] ?? 'GradeFlow');
-$subtitle   = htmlspecialchars($ss['system_subtitle'] ?? 'GradeFlow Grading System');
+$logoPath   = $ss['logo_path']         ?? '';
+$schoolName = htmlspecialchars($ss['school_name']      ?? 'GradeFlow');
+$subtitle   = htmlspecialchars($ss['system_subtitle']  ?? 'GradeFlow Grading System');
+
+// School Name and Subtitle font settings for the nav bar
+$_navBuildCss = function(string $fontKey, string $style, string $size, string $defaultSize): string {
+    $map = ['Helvetica'=>'Arial,Helvetica,sans-serif','Times'=>"'Times New Roman',Times,serif",'Courier'=>"'Courier New',Courier,monospace"];
+    $css = '';
+    if (isset($map[$fontKey])) $css .= 'font-family:'.$map[$fontKey].';';
+    $sz = (float)$size;
+    $css .= $sz > 0 ? 'font-size:'.$sz.'pt;' : 'font-size:'.$defaultSize.';';
+    if (str_contains($style,'B')) $css .= 'font-weight:700;';
+    if (str_contains($style,'I')) $css .= 'font-style:italic;';
+    if (str_contains($style,'U')) $css .= 'text-decoration:underline;';
+    return $css;
+};
+$_snNavCss = $_navBuildCss(
+    $ss['school_name_font']  ?? 'Helvetica',
+    $ss['school_name_style'] ?? '',
+    $ss['school_name_size']  ?? '0',
+    'inherit'
+);
+$_stNavCss = $_navBuildCss(
+    $ss['subtitle_font']  ?? 'Helvetica',
+    $ss['subtitle_style'] ?? '',
+    $ss['subtitle_size']  ?? '0',
+    '.75rem'
+);
 
 // Font definition: each option has a Google Font (for online) and system fallbacks (for offline/XAMPP)
 // System fallbacks are chosen to look visually distinct so the change is obvious even without internet.
@@ -83,11 +108,6 @@ $chosen    = $fontMap[$webFont] ?? $fontMap['Outfit'];
 $fontStack = $chosen['stack'];
 $googleKey = $chosen['google'];
 ?>
-<?php if ($googleKey): ?>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=<?= rawurlencode($googleKey) ?>&display=swap">
-<?php endif; ?>
 <style>
 :root {
   --amber:      <?= $accent ?>;
@@ -148,7 +168,7 @@ a { color: <?= $link ?>; }
 .topbar .brand, .topbar nav a { color: <?= $navText ?>; }
 .topbar .btn-ghost { color: <?= $navText ?>; border-color: color-mix(in srgb,<?= $navText ?> 40%,transparent); }
 </style>
-<div class="topbar">
+<div class="topbar" id="mainTopbar">
   <a href="<?= $role==='admin'?'admin.php':($role==='chair'?'chair.php':'dashboard.php') ?>" class="brand" style="color:inherit;text-decoration:none">
     <?php if ($logoPath && file_exists($logoPath)): ?>
       <img src="<?= htmlspecialchars($logoPath) ?>"
@@ -156,12 +176,13 @@ a { color: <?= $link ?>; }
     <?php else: ?>
       <span class="mark">G</span>
     <?php endif; ?>
-    <span><?= $schoolName ?></span>
+    <span class="brand-name" style="<?= htmlspecialchars($_snNavCss) ?>"><?= $schoolName ?></span>
     <?php if ($schoolName !== 'GradeFlow' && $subtitle): ?>
-      <span style="font-size:.75rem;font-weight:300;opacity:.65"> &mdash; <?= $subtitle ?></span>
+      <span class="brand-sub" style="opacity:.65;<?= htmlspecialchars($_stNavCss) ?>"> &mdash; <?= $subtitle ?></span>
     <?php endif; ?>
   </a>
-  <nav>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+  <nav id="mainNav">
     <?php if ($role === 'admin'): ?>
       <a href="admin.php" <?= basename($_SERVER['PHP_SELF'])==='admin.php'?'style="font-weight:700;opacity:1"':'' ?>>Dashboard</a>
       <span class="pill pill-amber" style="font-size:.72rem">ADMIN</span>
@@ -181,6 +202,70 @@ a { color: <?= $link ?>; }
        style="color:var(--paper);border-color:rgba(245,240,230,.3)">Sign out</a>
   </nav>
 </div>
+<script>
+(function(){
+  var btn = document.getElementById('navToggle');
+  var bar = document.getElementById('mainTopbar');
+  var nav = document.getElementById('mainNav');
+  if (!btn || !bar || !nav) return;
+
+  var BP = 768; // breakpoint in px
+
+  function isMobile() { return window.innerWidth <= BP; }
+
+  function closeNav() {
+    nav.style.display = 'none';
+    bar.classList.remove('nav-open');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '&#9776;';
+  }
+
+  function openNav() {
+    nav.style.display = 'flex';
+    nav.style.flexDirection = 'column';
+    bar.classList.add('nav-open');
+    btn.setAttribute('aria-expanded', 'true');
+    btn.innerHTML = '&#10005;';
+  }
+
+  function applyLayout() {
+    if (isMobile()) {
+      btn.style.display = 'flex';
+      // Only hide nav if it is not already open
+      if (!bar.classList.contains('nav-open')) {
+        nav.style.display = 'none';
+      }
+    } else {
+      btn.style.display = 'none';
+      // Reset to desktop — let CSS flex row take over
+      nav.style.display = '';
+      nav.style.flexDirection = '';
+      bar.classList.remove('nav-open');
+    }
+  }
+
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (bar.classList.contains('nav-open')) { closeNav(); } else { openNav(); }
+  });
+
+  // Close on nav link tap (supports full-page navigations)
+  nav.addEventListener('click', function(e) {
+    if (e.target.tagName === 'A') closeNav();
+  });
+
+  // Close when tapping anywhere outside the topbar
+  document.addEventListener('click', function(e) {
+    if (bar.classList.contains('nav-open') && !bar.contains(e.target)) closeNav();
+  });
+
+  // Re-evaluate on resize (e.g. phone rotation)
+  window.addEventListener('resize', applyLayout);
+
+  // Run immediately — hides nav on mobile before first paint
+  applyLayout();
+})();
+</script>
 
 <?php if ($role === 'admin'): ?>
 <!-- ═══════════════════════════════════════════════════════════════════

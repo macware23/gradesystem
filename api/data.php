@@ -200,18 +200,25 @@ case 'bulk_students': {
     if (!owns_class($classId)) fail('Not authorized', 403);
     $pdo = db(); $pdo->beginTransaction();
     $stmt = $pdo->prepare('INSERT INTO students (class_id,student_no,last_name,first_name,email) VALUES (?,?,?,?,?)');
-    // Get all activity IDs so new students start with score=0 (not blank)
-    $actStmt = $pdo->query("SELECT a.id FROM activities a JOIN criteria c ON c.id=a.criterion_id WHERE c.class_id=$classId");
-    $activityIds = $actStmt->fetchAll(PDO::FETCH_COLUMN);
-    $scoreStmt = $pdo->prepare('INSERT IGNORE INTO scores (student_id,activity_id,raw_score) VALUES (?,?,0)');
-    $n=0;
+    // Fetch all activity IDs once for this class
+    $activityIds = $pdo->query(
+        "SELECT a.id FROM activities a JOIN criteria c ON c.id=a.criterion_id WHERE c.class_id=$classId"
+    )->fetchAll(PDO::FETCH_COLUMN);
+    $n = 0; $batchVals = [];
     foreach (($d['rows'] ?? []) as $r) {
         $last=trim($r['last_name']??''); $first=trim($r['first_name']??'');
         if ($last==='' && $first==='') continue;
         $stmt->execute([$classId,$r['student_no']??'',$last,$first,$r['email']??'']);
         $newId = (int)$pdo->lastInsertId();
-        foreach ($activityIds as $aid) $scoreStmt->execute([$newId, $aid]);
+        foreach ($activityIds as $aid) { $batchVals[] = $newId; $batchVals[] = (int)$aid; }
         $n++;
+    }
+    // One batch INSERT instead of N×M individual inserts
+    if ($batchVals) {
+        $pairs = count($batchVals) / 2;
+        $ph = implode(',', array_fill(0, $pairs, '(?,?,0)'));
+        $pdo->prepare("INSERT IGNORE INTO scores (student_id,activity_id,raw_score) VALUES $ph")
+            ->execute($batchVals);
     }
     $pdo->commit();
     out(['ok'=>true,'added'=>$n]);
@@ -431,12 +438,21 @@ case 'duplicate_class': {
     $crits = $pdo->prepare('SELECT * FROM criteria WHERE class_id=? ORDER BY sort_order,id'); $crits->execute([$srcId]);
     $insCA = $pdo->prepare('INSERT INTO criteria (class_id,term,name,weight,sort_order) VALUES (?,?,?,?,?)');
     $insAA = $pdo->prepare('INSERT INTO activities (criterion_id,label,perfect_score,sort_order) VALUES (?,?,?,?)');
-    $acts  = $pdo->prepare('SELECT * FROM activities WHERE criterion_id=? ORDER BY sort_order,id');
-    foreach ($crits->fetchAll() as $cr) {
+    $critsAll = $crits->fetchAll();
+    // Batch-load all activities for all source criteria in one query instead of one per criterion
+    $actsByCrit = [];
+    if ($critsAll) {
+        $critIds = array_column($critsAll, 'id');
+        $ph2 = implode(',', array_fill(0, count($critIds), '?'));
+        $actAll = $pdo->prepare("SELECT * FROM activities WHERE criterion_id IN ($ph2) ORDER BY criterion_id, sort_order, id");
+        $actAll->execute($critIds);
+        foreach ($actAll->fetchAll() as $a) $actsByCrit[(int)$a['criterion_id']][] = $a;
+    }
+    foreach ($critsAll as $cr) {
         $insCA->execute([$newClassId, $cr['term'], $cr['name'], $cr['weight'], $cr['sort_order']]);
         $newCritId = (int)$pdo->lastInsertId();
-        $acts->execute([$cr['id']]);
-        foreach ($acts->fetchAll() as $a) $insAA->execute([$newCritId, $a['label'], $a['perfect_score'], $a['sort_order']]);
+        foreach ($actsByCrit[(int)$cr['id']] ?? [] as $a)
+            $insAA->execute([$newCritId, $a['label'], $a['perfect_score'], $a['sort_order']]);
     }
     $pdo->commit();
     out(['ok' => true, 'new_class_id' => $newClassId, 'name' => $srcClass['subject_name'] . ' (copy)']);

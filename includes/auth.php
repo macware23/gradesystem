@@ -153,15 +153,15 @@ function owns_class(int $classId): bool {
     if (is_chair()) {
         $assignments = current_assignments();
         if (!$assignments) return false;
-        // Chair can access classes of ANY teacher in ANY of their assignments
-        foreach ($assignments as [$col, $dept]) {
-            $s = db()->prepare(
-                'SELECT 1 FROM classes c JOIN teachers t ON t.id=c.teacher_id
-                 WHERE c.id=? AND t.college=? AND t.department=? AND t.role="teacher"');
-            $s->execute([$classId, $col, $dept]);
-            if ($s->fetchColumn()) return true;
-        }
-        return false;
+        // Single query with OR per assignment instead of one query per assignment
+        $clauses = implode(' OR ', array_fill(0, count($assignments), '(t.college=? AND t.department=?)'));
+        $params  = [$classId];
+        foreach ($assignments as [$col, $dept]) { $params[] = $col; $params[] = $dept; }
+        $s = db()->prepare(
+            "SELECT 1 FROM classes c JOIN teachers t ON t.id=c.teacher_id
+             WHERE c.id=? AND t.role='teacher' AND ($clauses)");
+        $s->execute($params);
+        return (bool)$s->fetchColumn();
     }
     $s = db()->prepare('SELECT 1 FROM classes WHERE id=? AND teacher_id=?');
     $s->execute([$classId, current_teacher_id()]); return (bool)$s->fetchColumn();
@@ -198,6 +198,9 @@ function can_write_class(int $classId): bool {
  * Returns default values for any keys not yet customised.
  */
 function school_settings(): array {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+
     // System defaults (used when a user has not saved their own preferences yet)
     static $personalDefaults = [
         'web_accent'     => '#c97b1f',
@@ -312,5 +315,6 @@ function school_settings(): array {
             foreach ($stmt->fetchAll() as $r) $out[$r['setting_key']] = $r['setting_val'];
         }
     } catch (\Throwable $e) { /* table may not exist yet on first install */ }
-    return $out;
+    $cache = $out;
+    return $cache;
 }

@@ -24,7 +24,7 @@ function pdfColorField(string $id, string $defaultRgb): string {
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Settings — <?= htmlspecialchars($_pageSubtitle) ?></title>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <style>
 .font-card {
   border:2px solid var(--line); border-radius:12px; padding:12px 14px;
@@ -305,6 +305,78 @@ foreach ($hdrLines as $hl):
       <label>System Subtitle <span class="muted">(shown on login page and in report footer)</span></label>
       <input id="s_subtitle" placeholder="e.g. GradeFlow Grading System" style="max-width:440px">
     </div>
+
+    <div style="margin-top:18px;margin-bottom:6px;font-size:.88rem;font-weight:600;color:var(--ink)">
+      Text Appearance
+    </div>
+    <p class="muted" style="font-size:.82rem;margin:0 0 10px">
+      Font family, size, and style for School Name and System Subtitle in PDF report headers.
+    </p>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="background:var(--paper-2)">
+            <th style="padding:7px 10px;text-align:left;border:1px solid var(--line);white-space:nowrap;font-weight:600">Field</th>
+            <th style="padding:7px 10px;text-align:left;border:1px solid var(--line);font-weight:600">Font Family</th>
+            <th style="padding:7px 8px;text-align:center;border:1px solid var(--line);font-weight:600">Size (pt)</th>
+            <th style="padding:7px 10px;text-align:center;border:1px solid var(--line);font-weight:600">Style</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:6px 10px;border:1px solid var(--line);white-space:nowrap;color:var(--ink-soft)">School Name</td>
+            <td style="padding:5px 8px;border:1px solid var(--line)">
+              <select id="s_name_font" style="width:130px;font-size:.81rem;padding:4px 6px">
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times">Times New Roman</option>
+                <option value="Courier">Courier</option>
+              </select>
+            </td>
+            <td style="padding:5px 8px;border:1px solid var(--line);text-align:center">
+              <input type="number" id="s_name_size" value="10" min="6" max="24" step="0.5"
+                style="width:58px;text-align:center;font-size:.81rem;padding:4px 6px">
+            </td>
+            <td style="padding:5px 10px;border:1px solid var(--line);text-align:center">
+              <div class="hdr-style-grp" id="s_name_style_grp">
+                <button type="button" class="hdr-style-btn" data-for="s_name_style" data-s="B"
+                  onclick="toggleHdrStyle('s_name_style',this)"><strong>B</strong></button>
+                <button type="button" class="hdr-style-btn" data-for="s_name_style" data-s="I"
+                  onclick="toggleHdrStyle('s_name_style',this)"><em>I</em></button>
+                <button type="button" class="hdr-style-btn" data-for="s_name_style" data-s="U"
+                  onclick="toggleHdrStyle('s_name_style',this)"><u>U</u></button>
+              </div>
+              <input type="hidden" id="s_name_style" value="B">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 10px;border:1px solid var(--line);white-space:nowrap;color:var(--ink-soft)">System Subtitle</td>
+            <td style="padding:5px 8px;border:1px solid var(--line)">
+              <select id="s_subtitle_font" style="width:130px;font-size:.81rem;padding:4px 6px">
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times">Times New Roman</option>
+                <option value="Courier">Courier</option>
+              </select>
+            </td>
+            <td style="padding:5px 8px;border:1px solid var(--line);text-align:center">
+              <input type="number" id="s_subtitle_size" value="8" min="6" max="24" step="0.5"
+                style="width:58px;text-align:center;font-size:.81rem;padding:4px 6px">
+            </td>
+            <td style="padding:5px 10px;border:1px solid var(--line);text-align:center">
+              <div class="hdr-style-grp" id="s_subtitle_style_grp">
+                <button type="button" class="hdr-style-btn" data-for="s_subtitle_style" data-s="B"
+                  onclick="toggleHdrStyle('s_subtitle_style',this)"><strong>B</strong></button>
+                <button type="button" class="hdr-style-btn" data-for="s_subtitle_style" data-s="I"
+                  onclick="toggleHdrStyle('s_subtitle_style',this)"><em>I</em></button>
+                <button type="button" class="hdr-style-btn" data-for="s_subtitle_style" data-s="U"
+                  onclick="toggleHdrStyle('s_subtitle_style',this)"><u>U</u></button>
+              </div>
+              <input type="hidden" id="s_subtitle_style" value="">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
   <!-- ---- System Logo (navigation bar - admin only) ---- -->
@@ -1739,15 +1811,6 @@ function selectWebFont(key, css, googleFamily) {
   curWebFont = key;
   document.querySelectorAll('.font-card').forEach(el => el.classList.remove('active'));
   document.getElementById('wf_' + key)?.classList.add('active');
-  // Dynamically load Google Font if needed (progressive enhancement for online users)
-  const oldLink = document.getElementById('gfont-preview');
-  if (oldLink) oldLink.remove();
-  if (googleFamily) {
-    const link = document.createElement('link');
-    link.id = 'gfont-preview'; link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(googleFamily) + '&display=swap';
-    document.head.appendChild(link);
-  }
   // Apply immediately via inline style (overrides stylesheet rules)
   document.body.style.setProperty('font-family', css, 'important');
   document.querySelectorAll('input,select,textarea,button,h1,h2,h3,label').forEach(el => {
@@ -2614,6 +2677,16 @@ async function loadSettings() {
   if (document.getElementById('s_name'))     document.getElementById('s_name').value     = s.school_name     || '';
   if (document.getElementById('s_addr'))     document.getElementById('s_addr').value     = s.school_address  || '';
   if (document.getElementById('s_subtitle')) document.getElementById('s_subtitle').value = s.system_subtitle || 'GradeFlow Grading System';
+  if (document.getElementById('s_name_font')) {
+    document.getElementById('s_name_font').value = s.school_name_font || 'Helvetica';
+    document.getElementById('s_name_size').value = s.school_name_size || '10';
+    applyHdrStyle('s_name', s.school_name_style !== undefined ? s.school_name_style : 'B');
+  }
+  if (document.getElementById('s_subtitle_font')) {
+    document.getElementById('s_subtitle_font').value = s.subtitle_font || 'Helvetica';
+    document.getElementById('s_subtitle_size').value = s.subtitle_size || '8';
+    applyHdrStyle('s_subtitle', s.subtitle_style !== undefined ? s.subtitle_style : '');
+  }
   syncColorField('s_accent',   's_accent_hex',   '--amber',    s.web_accent     || '#c97b1f');
   syncColorField('s_ink',      's_ink_hex',       '--ink',      s.web_ink        || '#1d2433');
   syncColorField('s_nav_text', 's_nav_text_hex',  null,         s.web_nav_text   || '#f5f0e6');
@@ -2707,6 +2780,12 @@ async function saveSettings() {
     school_name:     document.getElementById('s_name')     ? document.getElementById('s_name').value     : undefined,
     school_address:  document.getElementById('s_addr')     ? document.getElementById('s_addr').value     : undefined,
     system_subtitle: document.getElementById('s_subtitle') ? document.getElementById('s_subtitle').value : undefined,
+    school_name_font:  document.getElementById('s_name_font')     ? document.getElementById('s_name_font').value     : undefined,
+    school_name_size:  document.getElementById('s_name_size')     ? document.getElementById('s_name_size').value     : undefined,
+    school_name_style: document.getElementById('s_name_style')    ? document.getElementById('s_name_style').value    : undefined,
+    subtitle_font:     document.getElementById('s_subtitle_font') ? document.getElementById('s_subtitle_font').value : undefined,
+    subtitle_size:     document.getElementById('s_subtitle_size') ? document.getElementById('s_subtitle_size').value : undefined,
+    subtitle_style:    document.getElementById('s_subtitle_style')? document.getElementById('s_subtitle_style').value: undefined,
     // Personal web colors
     web_accent:     document.getElementById('s_accent_hex').value || document.getElementById('s_accent').value,
     web_ink:        document.getElementById('s_ink_hex').value    || document.getElementById('s_ink').value,

@@ -24,23 +24,14 @@ $paper      = htmlspecialchars($ss['web_paper']      ?? '#f5f0e6');
 $card       = htmlspecialchars($ss['web_card']       ?? '#fffdf8');
 $muted      = htmlspecialchars($ss['web_muted']      ?? '#495066');
 $webFont    = $ss['web_font'] ?? 'Outfit';
-$googleFontMap = [
-    'Outfit'=>'Outfit:wght@300;400;500;600;700','Inter'=>'Inter:wght@300;400;500;700',
-    'Lato'=>'Lato:wght@300;400;700','Merriweather'=>'Merriweather:wght@300;400;700',
-    'Roboto'=>'Roboto:wght@300;400;500;700',
-];
-$fontImport = isset($googleFontMap[$webFont])
-    ? "@import url('https://fonts.googleapis.com/css2?family={$googleFontMap[$webFont]}&display=swap');"
-    : '';
-$fontFamily = isset($googleFontMap[$webFont]) ? "'{$webFont}', system-ui, sans-serif" : 'system-ui, sans-serif';
+$fontFamily = "'{$webFont}', system-ui, sans-serif";
 ?>
 <!doctype html><html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sign in — <?= htmlspecialchars($schoolName) ?></title>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <style>
-<?= $fontImport ?>
 :root { --amber: <?= $accent ?>; --ink: <?= $ink ?>; --paper: <?= $paper ?>; --card: <?= $card ?>; --ink-soft: <?= $muted ?>; }
 body, input, select, button { font-family: <?= $fontFamily ?>; }
 </style>

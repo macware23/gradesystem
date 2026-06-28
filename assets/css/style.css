@@ -4,7 +4,7 @@
    Display: Fraunces (serif, characterful). Body/UI: Outfit (clean grotesque).
    ===================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,400&family=Outfit:wght@300..700&display=swap');
+@import url('fonts.css');
 
 :root {
   --paper:      #f5f0e6;
@@ -567,4 +567,181 @@ table.attend tbody td.sticky-col { position: sticky; left: 0; z-index: 4; }
 #analysisTabBar .analysis-scope-tab:hover {
   border-bottom-color: var(--amber);
   background: var(--paper);
+}
+
+/* =====================================================================
+   RESPONSIVE — Mobile & Tablet
+   Breakpoints: tablet ≤ 1024px | nav collapse ≤ 768px | mobile ≤ 640px
+   ===================================================================== */
+
+/* Prevent child elements from causing page-wide horizontal scroll */
+html { overflow-x: hidden; }
+
+/* ── Hamburger toggle (hidden on desktop) ── */
+.nav-toggle {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  color: var(--paper); padding: 8px 10px; border-radius: 8px;
+  font-size: 1.5rem; line-height: 1; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-toggle:hover,
+.nav-toggle:focus-visible { background: rgba(255,255,255,.14); outline: none; }
+
+/* ── Tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .wrap { padding: 20px; }
+  .page-head h1 { font-size: 1.8rem; }
+  #classList,
+  #archiveClassGrid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+}
+
+/* ── Navigation collapse (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* Keep topbar as a single row — no wrapping needed */
+  .topbar { padding: 10px 14px; }
+
+  /* Brand: shrink and truncate long names */
+  .topbar .brand { flex: 1 1 0; min-width: 0; font-size: 1.1rem; }
+  .topbar .brand .mark { width: 26px; height: 26px; flex-shrink: 0; font-size: .85rem; }
+  .topbar .brand img   { flex-shrink: 0; }
+  .brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brand-sub  { display: none; }
+
+  /* Show hamburger */
+  .nav-toggle { display: flex; align-items: center; justify-content: center; }
+
+  /* Nav: absolute dropdown that appears directly below the sticky topbar */
+  .topbar nav {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--ink);
+    flex-direction: column;
+    padding: 8px 14px 16px;
+    gap: 2px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.28);
+    border-top: 1px solid rgba(255,255,255,.12);
+    z-index: 200;
+  }
+  .topbar.nav-open nav { display: flex !important; }
+
+  /* Nav links */
+  .topbar nav a {
+    display: block !important;
+    padding: 11px 12px;
+    border-radius: 8px;
+    color: var(--paper-2) !important;
+    font-size: .95rem;
+    white-space: nowrap;
+  }
+  .topbar nav a:hover { background: rgba(255,255,255,.1) !important; text-decoration: none; }
+
+  /* Role badge */
+  .topbar nav .pill { margin: 4px 12px; }
+
+  /* Teacher name */
+  .topbar nav > span { display: block !important; padding: 8px 12px; font-size: .88rem; opacity: .65; }
+
+  /* Sign out button */
+  .topbar nav .btn {
+    display: flex !important;
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    margin-top: 6px;
+    padding: 11px 18px;
+  }
+}
+
+/* ── Mobile (≤ 640px) ── */
+@media (max-width: 640px) {
+  /* Wrapper */
+  .wrap { padding: 12px; max-width: 100%; }
+
+  /* Page header: stack title + actions vertically */
+  .page-head { flex-direction: column; align-items: stretch; gap: 10px; }
+  .page-head h1 { font-size: 1.35rem; margin: 0; }
+  .page-head .sub { font-size: .82rem; }
+  /* Action button group fills full width, buttons share the row */
+  .page-head > div:last-child {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  .page-head > div:last-child > .btn,
+  .page-head > div:last-child > a.btn,
+  .page-head > div:last-child > button.btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+    min-width: 0;
+  }
+
+  /* Cards */
+  .card { padding: 14px; }
+
+  /* Grids: single column */
+  #classList, #archiveClassGrid, .class-grid, .grid.cols-3 { grid-template-columns: 1fr; }
+
+  /* Teacher tiles: full-width */
+  #teacherList { flex-direction: column; }
+  .teacher-tile { width: 100%; min-height: 0; }
+
+  /* Form rows: stack fields */
+  .row { flex-direction: column; gap: 0; }
+  .row > * { flex: none; width: 100%; min-width: 0; }
+
+  /* iOS Safari: inputs with font-size < 16px trigger auto-zoom — prevent it */
+  input, select, textarea { font-size: 16px !important; }
+
+  /* Modals */
+  .modal-backdrop { padding: 8px; align-items: flex-start; padding-top: 20px; }
+  .modal { padding: 16px 14px; border-radius: 12px; max-width: 100%; max-height: 85vh; }
+
+  /* Gradebook toolbar */
+  .sheet-toolbar { gap: 6px; align-items: flex-start; }
+  .sheet-toolbar .btn { font-size: .78rem; padding: 7px 10px; white-space: nowrap; }
+  /* Hide the flex-1 spacer so buttons are left-aligned instead of right-pushed */
+  .toolbar-spacer { display: none !important; }
+  /* PDF/CSV dropdowns: anchor left so they stay in viewport */
+  .sheet-toolbar > div { position: relative; }
+
+  /* Toast: full-width */
+  .toast { left: 12px; right: 12px; bottom: 12px; text-align: center; }
+
+  /* Auth card */
+  .auth-card { padding: 20px 14px; }
+  .auth-card .big { font-size: 1.75rem; }
+
+  /* Analysis panel */
+  .analysis .risk-banner { flex-direction: column; gap: 10px; text-align: center; }
+  .analysis .risk-banner .score { font-size: 1.5rem; }
+  .weak-list li { flex-direction: column; gap: 6px; }
+  .bar { max-width: 100%; }
+
+  /* Attendance: readable horizontal session headers */
+  .sess-head { writing-mode: horizontal-tb; transform: none; font-size: .68rem; padding: 4px 3px; min-width: 28px; }
+
+  /* Class card action buttons wrap */
+  .class-card > div:last-child { flex-wrap: wrap; gap: 6px; }
+
+  /* Column paste popover: keep inside viewport */
+  .col-paste-pop { left: 12px !important; right: 12px !important; width: auto !important; top: auto !important; position: fixed !important; }
+
+  /* Gradebook dropdown menus: use fixed positioning so they stay in viewport */
+  #reportMenu, #csvMenu {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    bottom: 70px !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
 }

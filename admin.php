@@ -10,7 +10,7 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin — <?= htmlspecialchars($_pageSubtitle) ?></title>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 </head>
 <body>
 <?php require __DIR__ . '/includes/topbar.php'; ?>
@@ -43,7 +43,7 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
 
   <!-- Teacher detail panel -->
   <div id="teacherDetail" style="display:none;margin-top:4px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
       <div>
         <h2 id="detailTitle" style="margin:0"></h2>
         <div id="detailMeta" class="muted" style="font-size:.88rem;margin-top:2px"></div>
@@ -56,6 +56,15 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
           &#128465; Delete Account
         </button>
         <button class="btn btn-ghost" onclick="closeDetail()">← Back to list</button>
+      </div>
+    </div>
+    <!-- Class search -->
+    <div class="card" style="margin-bottom:16px;padding:12px 16px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input id="classSearchBox" placeholder="Search by class name, code, or section…"
+          style="flex:1;min-width:200px" oninput="searchClasses(this.value)">
+        <button class="btn btn-ghost btn-sm" onclick="searchClasses('')">Show All</button>
+        <span class="muted" id="classResultCount" style="font-size:.84rem"></span>
       </div>
     </div>
     <div id="detailClasses" class="class-grid"></div>
@@ -117,6 +126,7 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
 let allTeachers = [];
 let currentTeacherId = null;
 let currentTeacherName = '';
+let currentTeacherClasses = [];
 
 async function loadTeachers() {
   const r = await fetch('api/admin.php?action=teachers').then(r=>r.json());
@@ -228,43 +238,135 @@ function searchTeachers(q) {
     t.full_name.toLowerCase().includes(lc) || t.email.toLowerCase().includes(lc)));
 }
 
+function toggleFolder(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.fold-icon');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  icon.textContent = isOpen ? '▶' : '▼';
+  header.style.borderRadius = isOpen ? '10px' : '10px 10px 0 0';
+}
+
+function renderClassRow(c, isEven) {
+  const terms = (c.term_system||'').split(',').map(t=>t.trim()).filter(Boolean);
+  const reportBtns = [
+    `<a href="api/report.php?class_id=${c.id}&type=final" target="_blank"
+       style="font-size:.68rem;padding:3px 8px;border:1px solid var(--line);border-radius:5px;
+              background:var(--paper);color:var(--ink);text-decoration:none;white-space:nowrap;
+              transition:background .12s" onmouseover="this.style.background='var(--amber-soft)'"
+       onmouseout="this.style.background='var(--paper)'">&#128196; Final</a>`,
+    ...terms.map(t=>`<a href="api/report.php?class_id=${c.id}&type=term&term=${encodeURIComponent(t)}"
+       target="_blank"
+       style="font-size:.68rem;padding:3px 8px;border:1px solid var(--line);border-radius:5px;
+              background:var(--paper);color:var(--ink);text-decoration:none;white-space:nowrap;
+              transition:background .12s" onmouseover="this.style.background='var(--amber-soft)'"
+       onmouseout="this.style.background='var(--paper)'">${esc(t)}</a>`)
+  ].join('');
+  const sem = c.semester
+    ? `<span style="font-size:.64rem;background:var(--amber-soft);color:var(--amber);
+                   padding:1px 7px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0">${esc(c.semester)}</span>`
+    : '';
+  const rowBg = isEven ? 'var(--paper-2)' : 'var(--paper)';
+  return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;
+                      background:${rowBg};border-bottom:1px solid var(--line);flex-wrap:wrap">
+    <!-- Subject info -->
+    <div style="flex:1;min-width:160px">
+      <div style="font-weight:600;font-size:.84rem;line-height:1.3;word-break:break-word">${esc(c.subject_name)}</div>
+      <div style="font-size:.70rem;color:var(--ink-soft);margin-top:1px">
+        ${[c.subject_code, c.section].filter(Boolean).map(esc).join(' &middot; ')}
+        &nbsp;&middot;&nbsp; ${c.student_count} student${c.student_count!=1?'s':''}
+        &nbsp;&middot;&nbsp; Passing ${(+c.passing_grade).toFixed(0)}
+      </div>
+    </div>
+    <!-- Semester badge -->
+    ${sem}
+    <!-- Report buttons -->
+    <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">
+      ${reportBtns}
+    </div>
+  </div>`;
+}
+
 async function viewTeacher(tid, name, email) {
   currentTeacherId = tid;
   currentTeacherName = name;
+  currentTeacherClasses = [];
   document.getElementById('teacherListWrap').style.display = 'none';
   document.getElementById('teacherDetail').style.display = '';
   document.getElementById('detailTitle').textContent = name;
   document.getElementById('detailMeta').textContent = email;
+  document.getElementById('classSearchBox').value = '';
+  document.getElementById('classResultCount').textContent = '';
   document.getElementById('detailClasses').innerHTML =
     '<div class="empty"><div class="spinner"></div></div>';
   const r = await fetch(`api/admin.php?action=teacher_classes&teacher_id=${tid}`).then(r=>r.json());
-  const classes = r.classes || [];
+  currentTeacherClasses = r.classes || [];
+  renderDetailClasses(currentTeacherClasses);
+}
+
+function searchClasses(q) {
+  document.getElementById('classSearchBox').value = q;
+  if (!q.trim()) { renderDetailClasses(currentTeacherClasses); return; }
+  const lc = q.toLowerCase();
+  const filtered = currentTeacherClasses.filter(c =>
+    (c.subject_name  || '').toLowerCase().includes(lc) ||
+    (c.subject_code  || '').toLowerCase().includes(lc) ||
+    (c.section       || '').toLowerCase().includes(lc)
+  );
+  renderDetailClasses(filtered, true);
+}
+
+function renderDetailClasses(classes, isFiltered = false) {
+  const countEl = document.getElementById('classResultCount');
   if (!classes.length) {
     document.getElementById('detailClasses').innerHTML =
-      '<div class="empty" style="grid-column:1/-1"><div class="big">No classes yet</div></div>';
+      `<div class="empty" style="grid-column:1/-1"><div class="big">${isFiltered ? 'No classes match that search' : 'No classes yet'}</div></div>`;
+    countEl.textContent = isFiltered ? '0 results' : '';
     return;
   }
-  document.getElementById('detailClasses').innerHTML = classes.map(c => {
-    const terms = (c.term_system||'').split(',').map(t=>t.trim()).filter(Boolean);
-    const reportLinks = [
-      `<a class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:4px 10px"
-         href="api/report.php?class_id=${c.id}&type=final" target="_blank">
-         &#128196; Final PDF</a>`,
-      ...terms.map(t=>`<a class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:4px 10px"
-         href="api/report.php?class_id=${c.id}&type=term&term=${encodeURIComponent(t)}"
-         target="_blank">&#128196; ${esc(t)}</a>`)
-    ].join('');
-    return `<div class="card class-card" style="display:flex;flex-direction:column;padding:16px">
-      <div class="card-body" style="padding:0">
-        <h2 style="margin:0 0 2px;font-size:1rem;line-height:1.3;word-break:break-word;font-weight:700">${esc(c.subject_name)}</h2>
-        <div class="muted" style="font-size:.78rem;margin-bottom:6px">${esc(c.subject_code||'')}${c.section?' &middot; '+esc(c.section):''}</div>
-        <div class="muted" style="font-size:.78rem">
-          ${c.student_count} student${c.student_count!=1?'s':''} &nbsp;&middot;&nbsp;
-          ${esc(c.school_year||'')} &nbsp;&middot;&nbsp; Passing ${(+c.passing_grade).toFixed(0)}
-        </div>
+
+  if (isFiltered) {
+    countEl.textContent = `${classes.length} result${classes.length !== 1 ? 's' : ''}`;
+    // Flat list when searching — skip the A.Y. folder grouping
+    document.getElementById('detailClasses').innerHTML =
+      `<div style="grid-column:1/-1;border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        ${classes.map((c, i) => renderClassRow(c, i % 2 === 1)).join('')}
+       </div>`;
+    return;
+  }
+
+  countEl.textContent = `${classes.length} class${classes.length !== 1 ? 'es' : ''}`;
+  // Group by school_year, sorted most-recent first
+  const grouped = {};
+  for (const c of classes) {
+    const ay = c.school_year || 'Unknown';
+    if (!grouped[ay]) grouped[ay] = [];
+    grouped[ay].push(c);
+  }
+  const sortedYears = Object.keys(grouped).sort((a, b) => {
+    const ya = parseInt(a) || 0, yb = parseInt(b) || 0;
+    return yb - ya;
+  });
+
+  // Render as folders — first year open, rest collapsed
+  document.getElementById('detailClasses').innerHTML = sortedYears.map((ay, idx) => {
+    const items = grouped[ay];
+    const count = items.length;
+    const isFirst = idx === 0;
+    return `
+    <div style="margin-bottom:12px;grid-column:1/-1">
+      <div onclick="toggleFolder(this)"
+           style="display:flex;align-items:center;gap:10px;padding:11px 16px;
+                  background:var(--ink);color:var(--paper);
+                  border-radius:10px 10px 0 0;cursor:pointer;user-select:none;transition:background .15s">
+        <span style="font-size:1.05rem">&#128193;</span>
+        <span style="font-weight:700;font-size:.95rem;flex:1">A.Y. ${esc(ay)}</span>
+        <span style="font-size:.78rem;opacity:.65">${count} class${count!==1?'es':''}</span>
+        <span class="fold-icon" style="font-size:.75rem;opacity:.7;min-width:12px">${isFirst?'▼':'▶'}</span>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line);margin-top:10px">
-        ${reportLinks}
+      <div style="display:${isFirst?'':'none'};border:1px solid var(--line);border-top:none;
+                  border-radius:0 0 10px 10px;overflow:hidden">
+        ${items.map((c, i) => renderClassRow(c, i % 2 === 1)).join('')}
       </div>
     </div>`;
   }).join('');
@@ -272,6 +374,9 @@ async function viewTeacher(tid, name, email) {
 
 function closeDetail() {
   currentTeacherId = null;
+  currentTeacherClasses = [];
+  document.getElementById('classSearchBox').value = '';
+  document.getElementById('classResultCount').textContent = '';
   document.getElementById('teacherDetail').style.display = 'none';
   document.getElementById('teacherListWrap').style.display = '';
 }

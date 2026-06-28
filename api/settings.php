@@ -21,7 +21,9 @@ $pdo    = db();
 $tid    = current_teacher_id();
 
 // Keys that belong to each category
-const GLOBAL_KEYS = ['school_name','school_address','logo_path','report_logo_path','system_subtitle'];
+const GLOBAL_KEYS = ['school_name','school_address','logo_path','report_logo_path','system_subtitle',
+    'school_name_font','school_name_size','school_name_style',
+    'subtitle_font','subtitle_size','subtitle_style'];
 const USER_KEYS   = [
     'web_accent','web_ink','web_text_color','web_font',
     'web_nav_text','web_paper','web_card','web_line','web_muted','web_link',

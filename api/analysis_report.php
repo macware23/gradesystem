@@ -31,8 +31,25 @@ function rgbA(string $v, array $fb): array {
     return (count($p)===3 && is_numeric($p[0])) ? [(int)$p[0],(int)$p[1],(int)$p[2]] : $fb;
 }
 
-// Helper: UTF-8 → ISO-8859-1 for FPDF, preserves Ñ/ñ
+// Helper: UTF-8 → ISO-8859-1 for FPDF.
+// Pre-maps common Unicode chars to ASCII so iconv never drops them silently.
 function pdfName(string $s): string {
+    $map = [
+        "\u{2018}" => "'",    "\u{2019}" => "'",    "\u{201A}" => "'",   "\u{201B}" => "'",
+        "\u{201C}" => '"',    "\u{201D}" => '"',    "\u{201E}" => '"',   "\u{201F}" => '"',
+        "\u{2013}" => '-',    "\u{2014}" => '-',    "\u{2015}" => '-',   "\u{2212}" => '-',
+        "\u{2026}" => '...',
+        "\u{2022}" => chr(149), "\u{2023}" => '>',  "\u{25AA}" => chr(149), "\u{25CF}" => chr(149),
+        "\u{00A0}" => ' ',    "\u{2009}" => ' ',    "\u{202F}" => ' ',
+        "\u{200B}" => '',     "\u{200C}" => '',     "\u{200D}" => '',    "\u{FEFF}" => '',
+        "\u{2192}" => '->',   "\u{2190}" => '<-',   "\u{2191}" => '^',   "\u{2193}" => 'v',
+        "\u{00D7}" => 'x',    "\u{00F7}" => '/',    "\u{2044}" => '/',
+        "\u{2032}" => "'",    "\u{2033}" => '"',
+        "\u{00B0}" => chr(176), "\u{00BD}" => '1/2', "\u{00BC}" => '1/4', "\u{00BE}" => '3/4',
+    ];
+    $s = strtr($s, $map);
+    // Strip any remaining non-printable control chars (keep \n \r \t)
+    $s = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $s);
     return iconv('UTF-8', 'ISO-8859-1//TRANSLIT//IGNORE', $s) ?: $s;
 }
 $hdrBg        = rgbA($ss['ai_hdr_bg']         ?? '', [29,36,51]);
@@ -94,14 +111,14 @@ class AnalysisPDF extends FPDF {
         $this->SetXY($x, 4);
         $this->SetFont($this->titleFont, 'B', 13);
         $this->SetTextColor(...$this->hdrSchoolTxt);
-        $this->Cell(0, 7, $this->schoolName, 0, 1, 'L');
+        $this->Cell(0, 7, pdfName($this->schoolName), 0, 1, 'L');
         $this->SetX($x);
         $this->SetFont($this->bodyFont, '', 7.5);
         $this->SetTextColor(...$this->hdrAddrTxt);
-        $this->Cell(130, 5, $this->schoolAddr ?: $this->subtitle, 0, 0, 'L');
+        $this->Cell(130, 5, pdfName($this->schoolAddr ?: $this->subtitle), 0, 0, 'L');
         $this->SetFont($this->bodyFont, 'B', 8);
         $this->SetTextColor(...$this->hdrTitleTxt);
-        $this->Cell(0, 5, $this->rptTitle, 0, 1, 'R');
+        $this->Cell(0, 5, pdfName($this->rptTitle), 0, 1, 'R');
         $this->SetY(30);
         $this->SetTextColor(...$this->textRgb);
     }
@@ -110,7 +127,7 @@ class AnalysisPDF extends FPDF {
         $this->SetY(-14);
         $this->SetFont($this->bodyFont, 'I', 6.5);
         $this->SetTextColor(...$this->footerTxt);
-        $this->Cell(0, 5, $this->subtitle . '  -  Generated ' . date('F j, Y  g:i A') .
+        $this->Cell(0, 5, pdfName($this->subtitle) . '  -  Generated ' . date('F j, Y  g:i A') .
             '  -  Page ' . $this->PageNo() . '/{nb}', 0, 1, 'C');
         $this->SetFont($this->bodyFont, '', 6.5);
         $this->Cell(0, 5, 'Copyright ' . chr(169) . ' 2026 Arnel Maghinay. All rights reserved.', 0, 0, 'C');
@@ -120,13 +137,14 @@ class AnalysisPDF extends FPDF {
         $this->SetFont($this->bodyFont, 'B', $this->bodySize + 0.5);
         $this->SetFillColor(...$this->sectionBg);
         $this->SetTextColor(...$this->sectionTxt);
-        $this->Cell(0, 7, $text, 0, 1, 'L', true);
+        $this->Cell(0, 7, pdfName($text), 0, 1, 'L', true);
         $this->SetTextColor(...$this->textRgb);
         $this->Ln(2);
     }
 
     // Wrapped multi-line cell
     function wrappedCell(float $w, string $txt, bool $bullet=false): void {
+        $txt = pdfName($txt);
         if ($bullet) $txt = chr(149) . ' ' . $txt;
         $this->MultiCell($w > 0 ? $w : $this->GetPageWidth() - $this->lMargin - $this->rMargin,
             $this->bodySize * 0.42, $txt, 0, 'L');
@@ -166,7 +184,7 @@ $pdf->AddPage();
 // ── Class header ────────────────────────────────────────────────────
 $pdf->SetFont($titleFont, 'B', 13);
 $pdf->SetTextColor(...$textRgb);
-$pdf->Cell(0, 8, ($class['subject_name'] ?? '').' - '.$scope.' Intervention Report', 0, 1);
+$pdf->Cell(0, 8, pdfName(($class['subject_name'] ?? '').' - '.$scope.' Intervention Report'), 0, 1);
 $pdf->SetFont($bodyFont, '', 8.5);
 $pdf->SetTextColor(...$infoTxt);
 $info = [];
@@ -174,7 +192,7 @@ if (!empty($class['subject_code'])) $info[] = 'Code: '.$class['subject_code'];
 if (!empty($class['school_year']))  $info[] = 'S.Y.: '.$class['school_year'];
 $info[] = 'Instructor: '.($class['teacher_name'] ?? '');
 if (!empty($class['section']))      $info[] = 'Section: '.$class['section'];
-$pdf->Cell(0, 5, implode('  -  ', $info), 0, 1);
+$pdf->Cell(0, 5, pdfName(implode('  -  ', $info)), 0, 1);
 $pdf->Ln(2);
 $pdf->SetFillColor(...$accRgb);
 $pdf->Rect(12, $pdf->GetY(), $pdf->GetPageWidth()-24, 0.8, 'F');
@@ -243,7 +261,7 @@ foreach ($j['results'] as $r) {
         foreach (array_slice($r['weak_areas'], 0, 3) as $w) {
             $pctBar = min(100, $w['pct']);
             $pdf->SetTextColor(...$textRgb);
-            $pdf->Cell(60, 4.5, '    '.$w['name'].' ('.$w['term'].')', 0, 0);
+            $pdf->Cell(60, 4.5, pdfName('    '.$w['name'].' ('.$w['term'].')'), 0, 0);
             $pdf->SetTextColor(...$textRgb);
             $pdf->Cell(18, 4.5, $w['pct'].'%', 0, 0, 'R');
             // Mini progress bar
@@ -273,7 +291,7 @@ foreach ($j['results'] as $r) {
         // Use MultiCell for wrapping
         $lineH = $fontSize * 0.42;
         $pdf->MultiCell($pdf->GetPageWidth()-24, $lineH + 0.5,
-            $prefix . $act, 0, 'L');
+            pdfName($prefix . $act), 0, 'L');
     }
     $pdf->Ln(3);
 }
@@ -286,7 +304,7 @@ if (!empty($j['narrative'])) {
     $pdf->SetFont($bodyFont, '', $fontSize);
     $pdf->SetTextColor(...$textRgb);
     $lineH = $fontSize * 0.42;
-    $pdf->MultiCell($pdf->GetPageWidth()-24, $lineH + 0.8, $j['narrative'], 0, 'L');
+    $pdf->MultiCell($pdf->GetPageWidth()-24, $lineH + 0.8, pdfName($j['narrative']), 0, 'L');
     $pdf->Ln(3);
 }
 

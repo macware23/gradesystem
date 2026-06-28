@@ -21,7 +21,8 @@ function magsEquivalent(perfect, raw, cutoff, zeroequiv) {
 function equiv(rawStr, perfect) {
   if (rawStr === '' || rawStr === null || rawStr === undefined || isNaN(rawStr)) return null;
   const raw = +rawStr;
-  if (SETTINGS.transmute) return Math.round(magsEquivalent(perfect, raw, SETTINGS.cutoff, SETTINGS.zero_equiv) * 100) / 100;
+  if (SETTINGS.transmute == 1) return Math.round(magsEquivalent(perfect, raw, SETTINGS.cutoff, SETTINGS.zero_equiv) * 100) / 100;
+  if (SETTINGS.transmute == 2) return perfect > 0 ? Math.round(((raw / perfect) * 50 + 50) * 100) / 100 : null;
   return perfect > 0 ? Math.round((raw / perfect) * 10000) / 100 : null;
 }
 
@@ -34,6 +35,13 @@ async function loadSheet() {
   const r = await fetch('api/data.php?action=sheet&class_id=' + CLASS_ID);
   DATA = await r.json();
   if (!DATA.ok) { toast(DATA.error); return; }
+  // Normalize all score keys to numbers once so every cell lookup is a direct hit
+  const _raw = DATA.scores || {};
+  DATA.scores = {};
+  for (const sid in _raw) {
+    DATA.scores[+sid] = {};
+    for (const aid in _raw[sid]) DATA.scores[+sid][+aid] = _raw[sid][aid];
+  }
   SETTINGS = DATA.settings;
   document.getElementById('className').textContent = DATA.class.subject_name;
   // Build labeled meta: Course Code | Course & Section | Academic Year
@@ -180,11 +188,9 @@ function renderGradeSheet(table, saveBtn) {
       </td>`;
     crit.forEach(c => {
       (c.activities || []).forEach(a => {
-        // Raw score: resolve both string and integer key variants from PHP JSON
-        const sid = s.id, aid = a.id;
-        const sScores = DATA.scores[sid] || DATA.scores[+sid] || {};
-        const rawStored = (sScores[aid] != null) ? sScores[aid]
-                        : (sScores[+aid] != null) ? sScores[+aid] : null;
+        // Keys are pre-normalized to numbers in loadSheet(), so a single lookup suffices
+        const sScores  = DATA.scores[s.id] || {};
+        const rawStored = sScores[a.id] ?? null;
         // Show 0 as an actual value (not placeholder) so AVG/WS compute immediately
         const rawVal    = rawStored != null ? rawStored : 0;
         const rawDisplay = Math.round(+rawVal);
@@ -629,6 +635,100 @@ async function saveDirty() {
 /* ------------------------------------------------------------------ */
 /* Criteria + activities setup modal                                   */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* Graded-item delete guard                                            */
+/* ------------------------------------------------------------------ */
+let _pendingDeleteFn = null;
+
+function _actHasScores(actId) {
+  if (!actId) return false;
+  const key = String(actId);
+  for (const sid in DATA.scores) {
+    const v = DATA.scores[sid]?.[key];
+    if (v !== undefined && v !== '' && v !== null && +v !== 0) return true;
+  }
+  return false;
+}
+
+function _critHasScores(critId) {
+  if (!critId) return false;
+  const crit = (DATA.criteria || []).find(c => String(c.id) === String(critId));
+  if (!crit) return false;
+  return (crit.activities || []).some(a => _actHasScores(a.id));
+}
+
+function removeCritRow(btn) {
+  const row  = btn.closest('[data-critrow]');
+  const cid  = row.querySelector('[data-cid]')?.value;
+  const name = row.querySelector('[data-f="name"]')?.value?.trim() || 'this criterion';
+  if (cid && _critHasScores(cid)) {
+    openGradedDeleteModal(
+      `"${name}" has recorded student scores. Deleting it will permanently erase all scores for this criterion and every activity under it.`,
+      () => { row.remove(); updateCritStatus(); }
+    );
+  } else {
+    row.remove();
+    updateCritStatus();
+  }
+}
+
+function removeActRow(btn) {
+  const row   = btn.closest('[data-actrow]');
+  const aid   = row.querySelector('[data-aid]')?.value;
+  const label = row.querySelector('[data-af="label"]')?.value?.trim() || 'this activity';
+  if (aid && _actHasScores(aid)) {
+    openGradedDeleteModal(
+      `"${label}" has recorded student scores. Deleting it will permanently erase all scores for this activity.`,
+      () => row.remove()
+    );
+  } else {
+    row.remove();
+  }
+}
+
+function openGradedDeleteModal(message, onConfirm) {
+  _pendingDeleteFn = onConfirm;
+  document.getElementById('gradedDeleteMsg').textContent = message;
+  document.getElementById('gradedDeletePass').value = '';
+  document.getElementById('gradedDeleteErr').style.display = 'none';
+  document.getElementById('gradedDeleteBtn').disabled = false;
+  document.getElementById('gradedDeleteBtn').textContent = '🗑 Delete Anyway';
+  document.getElementById('gradedDeleteModal').classList.add('show');
+  setTimeout(() => document.getElementById('gradedDeletePass').focus(), 80);
+}
+
+function cancelGradedDelete() {
+  _pendingDeleteFn = null;
+  document.getElementById('gradedDeleteModal').classList.remove('show');
+}
+
+async function confirmGradedDelete() {
+  const pass = document.getElementById('gradedDeletePass').value;
+  const err  = document.getElementById('gradedDeleteErr');
+  const btn  = document.getElementById('gradedDeleteBtn');
+  err.style.display = 'none';
+  if (!pass.trim()) {
+    err.textContent = 'Password is required.';
+    err.style.display = '';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Verifying…';
+  const r = await api('verify_password', { password: pass });
+  if (r.ok) {
+    document.getElementById('gradedDeleteModal').classList.remove('show');
+    const fn = _pendingDeleteFn;
+    _pendingDeleteFn = null;
+    if (fn) fn();
+  } else {
+    err.textContent = r.message || 'Incorrect password.';
+    err.style.display = '';
+    btn.disabled = false;
+    btn.textContent = '🗑 Delete Anyway';
+    document.getElementById('gradedDeletePass').select();
+  }
+}
+
 function openCriteria() {
   document.getElementById('critByTerm').innerHTML = DATA.terms.map(term => {
     const rows = critForTerm(term).map(cr => critBlock(term, cr)).join('');
@@ -663,7 +763,7 @@ function critBlock(term, cr) {
       <div style="flex:1"><label>Weight %</label>
         <input data-f="weight" type="number" step="1" value="${cr?.weight != null ? Math.round(+cr.weight) : ''}" oninput="updateCritStatus()"></div>
       ${dupBtn}
-      <button class="btn btn-ghost btn-sm" onclick="this.closest('[data-critrow]').remove();updateCritStatus()">Remove</button>
+      <button class="btn btn-ghost btn-sm" onclick="removeCritRow(this)">Remove</button>
     </div>
     <div style="margin-top:8px">
       <label>Activities (each with its own perfect score)</label>
@@ -678,7 +778,7 @@ function actRow(a) {
     <input type="hidden" data-aid value="${a?.id || ''}">
     <div style="flex:1"><input data-af="label" placeholder="Q1" value="${esc(a?.label || '')}"></div>
     <div style="flex:1"><input data-af="perfect" type="number" step="1" placeholder="Perfect score" value="${a?.perfect_score != null ? Math.round(+a.perfect_score) : ''}"></div>
-    <button class="btn btn-ghost btn-sm" onclick="this.closest('[data-actrow]').remove()">&times;</button>
+    <button class="btn btn-ghost btn-sm" onclick="removeActRow(this)">&times;</button>
   </div>`;
 }
 

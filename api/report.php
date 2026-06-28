@@ -451,6 +451,7 @@ $pdf->hdrCrsFont  = $hdrCrsFont;  $pdf->hdrCrsSize  = $hdrCrsSize;  $pdf->hdrCrs
 $pdf->hdrSecFont  = $hdrSecFont;  $pdf->hdrSecSize  = $hdrSecSize;  $pdf->hdrSecStyle  = $hdrSecStyle;
 $pdf->hdrSchFont  = $hdrSchFont;  $pdf->hdrSchSize  = $hdrSchSize;  $pdf->hdrSchStyle  = $hdrSchStyle;
 
+
 $pdf->rptTitle   = $type === 'final' ? 'Final Grade Report'
                  : ($type === 'term' ? $term . ' Grade Report'
                  : $term . ' Attendance Report');

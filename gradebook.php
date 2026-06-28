@@ -15,7 +15,7 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gradebook<?= $readonly ? ' (Read-Only)' : '' ?> — <?= htmlspecialchars($_pageSubtitle) ?></title>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 </head>
 <body>
 <?php require __DIR__ . '/includes/topbar.php'; ?>
@@ -49,18 +49,18 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
   <div class="card" style="padding:14px">
     <div class="sheet-toolbar">
       <span class="muted" id="transNote"></span>
-      <span style="flex:1"></span>
+      <span class="toolbar-spacer" style="flex:1"></span>
       <button class="btn btn-primary btn-sm" id="saveBtn" onclick="saveDirty()" disabled>Save changes</button>
       <button class="btn btn-ghost btn-sm" id="analyzeAllBtn" onclick="analyzeAll()" title="AI analysis for all students">
-        &#129504; Analyze All Students
+        &#129504; Analyze All
       </button>
       <div style="position:relative">
-        <button class="btn btn-dark btn-sm" onclick="toggleReportMenu(event)">&#8595; PDF Report &#9662;</button>
+        <button class="btn btn-dark btn-sm" onclick="toggleReportMenu(event)">&#8595; PDF &#9662;</button>
         <div id="reportMenu" class="card" style="display:none;position:absolute;right:0;top:110%;z-index:30;padding:10px;min-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.15)"></div>
       </div>
       <?php if (!$readonly): ?>
       <div style="position:relative">
-        <button class="btn btn-dark btn-sm" onclick="toggleCsvMenu(event)">&#8595; CSV / Excel &#9662;</button>
+        <button class="btn btn-dark btn-sm" onclick="toggleCsvMenu(event)">&#8595; CSV &#9662;</button>
         <div id="csvMenu" class="card" style="display:none;position:absolute;right:0;top:110%;z-index:30;padding:10px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.15)"></div>
       </div>
       <?php endif; ?>
@@ -70,6 +70,34 @@ $_pageSubtitle = school_settings()['system_subtitle'] ?? 'GradeFlow';
     </div>
     <div class="help-note" style="margin-top:12px">
       Each activity shows <strong>raw</strong> (you type) and its <strong>equivalent</strong> (computed). Scores are capped at each activity's perfect score. AVG = mean of equivalents; WS = AVG &times; weight.
+    </div>
+  </div>
+</div>
+
+<!-- Graded-item delete confirmation modal -->
+<div class="modal-backdrop" id="gradedDeleteModal" style="z-index:200">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0;color:var(--red)">&#9888; Graded Scores Detected</h2>
+      <button class="btn btn-ghost btn-sm" onclick="cancelGradedDelete()">&#10005; Close</button>
+    </div>
+    <div id="gradedDeleteMsg" style="background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;
+         border-radius:8px;padding:12px 14px;font-size:.88rem;margin-bottom:14px;line-height:1.5"></div>
+    <p style="margin:0 0 12px;font-size:.88rem;color:var(--ink-soft)">
+      To confirm this deletion, enter your account password below.
+    </p>
+    <div class="field">
+      <label>Your Account Password</label>
+      <input type="password" id="gradedDeletePass" placeholder="Enter your password"
+             autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')confirmGradedDelete()">
+    </div>
+    <div id="gradedDeleteErr" class="alert alert-error" style="display:none;margin-bottom:4px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost" onclick="cancelGradedDelete()">Cancel</button>
+      <button id="gradedDeleteBtn" class="btn btn-primary"
+              style="background:var(--red);border-color:var(--red)"
+              onclick="confirmGradedDelete()">&#128465; Delete Anyway</button>
     </div>
   </div>
 </div>

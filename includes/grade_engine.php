@@ -33,7 +33,8 @@ function mags_equivalent(float $perfect, float $raw, float $cutoff, float $zeroe
 
 function activity_equivalent(?float $raw, float $perfect, array $cs): ?float {
     if ($raw === null) return null;
-    if ($cs['transmute']) return mags_equivalent($perfect, $raw, $cs['cutoff'], $cs['zero_equiv']);
+    if ($cs['transmute'] == 1) return mags_equivalent($perfect, $raw, $cs['cutoff'], $cs['zero_equiv']);
+    if ($cs['transmute'] == 2) return $perfect > 0 ? round(($raw / $perfect) * 50 + 50, 2) : null;
     return $perfect > 0 ? round(($raw / $perfect) * 100, 2) : null;
 }
 
